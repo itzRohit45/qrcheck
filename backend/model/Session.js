@@ -18,7 +18,11 @@ const sessionSchema = new Schema(
         studentId: { type: Schema.Types.ObjectId, ref: "Student" },
         status: { type: String, enum: ["Present", "Absent"], required: true },
         scannedAt: { type: Date },
-        scanLocation: { latitude: Number, longitude: Number },
+        scanLocation: { 
+          latitude: Number, 
+          longitude: Number,
+          accuracy: Number // Store accuracy information
+        },
       },
     ],
   },

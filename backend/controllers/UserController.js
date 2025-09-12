@@ -8,41 +8,60 @@ import bcrypt from "bcryptjs";
 
 async function Login(req, res) {
   const { email, password } = req.body;
-  let type = "student";
 
-  let user = await Student.findOne({ email });
-  if (!user) {
-    type = "teacher";
-    user = await Teacher.findOne({ email });
+  // 🛑 Validate inputs
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
   }
 
-  if (user) {
-    const isMatch = await bcrypt.compare(password.toString(), user.password);
+  try {
+    let type = "student";
+    let user = await Student.findOne({ email });
 
-    if (isMatch) {
-      const token = JWT.generateToken({ email: user.email });
-      user.type = type;
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "None",
-        })
-        .status(200)
-        .json({ user: user, type: type, token: token });
-    } else {
-      res.status(400).json({ message: "Invalid email or password" });
+    if (!user) {
+      type = "teacher";
+      user = await Teacher.findOne({ email });
     }
-  } else {
-    res.status(400).json({ message: "No such User" });
+
+    if (!user || !user.password) {
+      return res.status(400).json({ message: "No such user or password missing" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const token = JWT.generateToken({ email: user.email });
+    user.type = type;
+
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "None",
+      })
+      .status(200)
+      .json({ user, type, token });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error during login" });
   }
 }
 
 async function Signup(req, res) {
   const { name, email, rollNo, dob, branch, dept, password, type } = req.body;
 
+  // 🛑 Validate required inputs
+  if (!email || !password || !type) {
+    return res
+      .status(400)
+      .json({ message: "Email, password, and user type are required" });
+  }
+
   try {
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     if (type === "student") {
       const existingUser = await Student.findOne({ email }).exec();
@@ -59,14 +78,16 @@ async function Signup(req, res) {
         dob,
         branch,
         dept,
-        password: hashedPassword, // Store hashed password
+        password: hashedPassword,
       });
 
       await newUser.save();
-      res
+      return res
         .status(201)
         .json({ message: "Student registered successfully", user: newUser });
-    } else if (type === "teacher") {
+    }
+
+    if (type === "teacher") {
       const existingUser = await Teacher.findOne({ email }).exec();
       if (existingUser) {
         return res
@@ -79,22 +100,25 @@ async function Signup(req, res) {
         email,
         dob,
         dept,
-        password: hashedPassword, // Store hashed password
+        password: hashedPassword,
       });
 
       await newUser.save();
-      res
+      return res
         .status(201)
         .json({ message: "Teacher registered successfully", user: newUser });
-    } else {
-      res.status(400).json({
-        message: "Invalid user type. Must be either student or teacher.",
-      });
     }
+
+    // 🛑 Invalid type
+    return res.status(400).json({
+      message: "Invalid user type. Must be either student or teacher.",
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "An error occurred during signup. Please try again." });
+    console.error("Signup error:", err); // 👀 Logs the actual error in Render
+    res.status(500).json({
+      message: "An error occurred during signup. Please try again.",
+      error: err.message, // 👈 Optional, remove in production
+    });
   }
 }
 

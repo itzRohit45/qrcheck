@@ -110,7 +110,7 @@ export const markAttendance = async (req, res) => {
   try {
     console.log("Received markAttendance request:", req.body);
 
-    const { studentId, sessionId, latitude, longitude, scannedQRData } =
+    const { studentId, sessionId, latitude, longitude, accuracy, scannedQRData } =
       req.body;
 
     if (!studentId || !sessionId || !latitude || !longitude || !scannedQRData) {
@@ -124,6 +124,7 @@ export const markAttendance = async (req, res) => {
 
     console.log("Session Location:", session.location);
     console.log("User Location:", { latitude, longitude });
+    console.log("Location Accuracy:", accuracy || "Not provided");
     console.log("Allowed Radius:", session.radius);
 
     let qrData;
@@ -150,11 +151,24 @@ export const markAttendance = async (req, res) => {
     );
 
     console.log("Calculated Distance:", distance);
+    
+    // Adjust allowed radius based on accuracy if provided
+    let adjustedRadius = session.radius;
+    if (accuracy && accuracy > 20) { // Only adjust if accuracy is worse than 20m
+      // Dynamic radius adjustment - add part of the accuracy value to the radius
+      const accuracyBuffer = Math.min(accuracy * 0.8, 50); // Cap the adjustment at 50m
+      adjustedRadius += accuracyBuffer;
+      console.log(`Adjusted radius to ${adjustedRadius}m due to GPS accuracy of ${accuracy}m`);
+    }
 
-    if (distance > session.radius) {
+    if (distance > adjustedRadius) {
       return res
         .status(400)
-        .json({ error: "You are outside the allowed radius!" });
+        .json({ 
+          error: accuracy > 50 
+            ? `You appear to be outside the allowed area. Your GPS accuracy is poor (${Math.round(accuracy)}m), which may be causing this issue. Try moving to an open area.` 
+            : "You are outside the allowed radius!" 
+        });
     }
 
     let studentAttendance = session.attendance.find(
@@ -167,13 +181,21 @@ export const markAttendance = async (req, res) => {
       }
       studentAttendance.status = "Present";
       studentAttendance.scannedAt = new Date();
-      studentAttendance.scanLocation = { latitude, longitude };
+      studentAttendance.scanLocation = { 
+        latitude, 
+        longitude,
+        accuracy: accuracy || null 
+      };
     } else {
       session.attendance.push({
         studentId,
         status: "Present",
         scannedAt: new Date(),
-        scanLocation: { latitude, longitude },
+        scanLocation: { 
+          latitude, 
+          longitude,
+          accuracy: accuracy || null
+        },
       });
     }
 

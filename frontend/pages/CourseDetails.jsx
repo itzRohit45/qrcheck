@@ -53,18 +53,26 @@ const CourseDetails = () => {
 
   const fetchLocation = () => {
     if (navigator.geolocation) {
+      const geoOptions = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+      
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setSessionDetails((prev) => ({
             ...prev,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
           }));
         },
         (error) => {
           console.error("Error fetching location:", error);
-          alert("Unable to fetch location. Please enable GPS.");
-        }
+          alert("Unable to fetch location. Please enable GPS and try again.");
+        },
+        geoOptions
       );
     } else {
       alert("Geolocation is not supported by this browser.");
@@ -360,6 +368,24 @@ const CourseDetails = () => {
             <div className={styles["location-info"]}>
               <div>Latitude: {sessionDetails.latitude || "Fetching..."}</div>
               <div>Longitude: {sessionDetails.longitude || "Fetching..."}</div>
+              {sessionDetails.accuracy && (
+                <div style={{ 
+                  marginTop: '10px',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  backgroundColor: sessionDetails.accuracy > 50 ? '#fff3cd' : '#d4edda',
+                  color: sessionDetails.accuracy > 50 ? '#856404' : '#155724'
+                }}>
+                  GPS Accuracy: {Math.round(sessionDetails.accuracy)}m 
+                  {sessionDetails.accuracy > 50 ? ' (Poor)' : ' (Good)'}
+                  
+                  {sessionDetails.accuracy > 50 && (
+                    <div style={{ marginTop: '5px', fontSize: '0.9em' }}>
+                      Consider moving to an open area for better accuracy.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className={styles["modal-actions"]}>
