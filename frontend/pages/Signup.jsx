@@ -70,6 +70,7 @@ const Signup = () => {
           }
         } catch (err) {
           console.log(err);
+          toast.error(err.response?.data?.message || "Signup failed. Please try again.");
         }
       } else {
         toast.error("Passwords do not match");
