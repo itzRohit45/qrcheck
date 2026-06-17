@@ -7,7 +7,7 @@ import {
   captureSingleDescriptor,
 } from "../src/faceApi";
 
-export default function QRScanner({ sessionId }) {
+export default function QRScanner({ sessionId, onSuccess }) {
   const [step, setStep] = useState("scan"); // scan | face | result
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
@@ -70,11 +70,16 @@ export default function QRScanner({ sessionId }) {
       setSuccess(ok);
       setMessage(msg);
       setStep("result");
+      if (ok && onSuccess) {
+        setTimeout(() => {
+          if (!cancelled) onSuccess();
+        }, 1500);
+      }
     };
 
     (async () => {
       try {
-        setMessage("Loading face models...");
+        setMessage("Loading Face Recognition...");
         await loadModels();
 
         const stream = await navigator.mediaDevices.getUserMedia({

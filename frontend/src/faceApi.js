@@ -87,6 +87,8 @@ export async function captureDescriptors(video, count, onStatus) {
   const descriptors = [];
   for (let i = 0; i < count; i++) {
     onStatus && onStatus(`Capturing ${i + 1} of ${count}...`);
+    // Give React time to update the UI before running heavy face detection
+    await new Promise((r) => setTimeout(r, 100));
     let det = null;
     for (let attempt = 0; attempt < 20 && !det; attempt++) {
       det = await detectSingle(video);

@@ -14,18 +14,18 @@ const StudentCoursePage = () => {
   const [attendanceData, setAttendanceData] = useState({});
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      try {
-        const res = await clientServer.get(`/courses/${id}`);
-        setCourse(res.data);
-      } catch (error) {
-        console.error("Error fetching course details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCourseDetails = async () => {
+    try {
+      const res = await clientServer.get(`/courses/${id}`);
+      setCourse(res.data);
+    } catch (error) {
+      console.error("Error fetching course details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCourseDetails();
     const storedStudentId = localStorage.getItem("id");
     if (storedStudentId) {
@@ -269,7 +269,14 @@ const StudentCoursePage = () => {
       {showQRScanner && (
         <div className={styles.modal}>
           <div className={styles["modal-content"]}>
-            <QRScanner sessionId={sessionId} studentId={studentId} />
+            <QRScanner 
+              sessionId={sessionId} 
+              studentId={studentId} 
+              onSuccess={() => {
+                setShowQRScanner(false);
+                fetchCourseDetails(); // Refresh the attendance list to show "Present"
+              }}
+            />
             <div className={styles["modal-actions"]}>
               <button
                 className={styles["cancel-btn"]}

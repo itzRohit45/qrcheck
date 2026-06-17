@@ -5,7 +5,7 @@ import { loadModels, captureDescriptors } from "../src/faceApi";
 export default function FaceEnroll({ onDone, onCancel }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const [status, setStatus] = useState("Loading face models...");
+  const [status, setStatus] = useState("Loading Face Recognition...");
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
