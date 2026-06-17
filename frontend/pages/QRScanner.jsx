@@ -1,180 +1,186 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import axios from "axios";
+import { clientServer, getDeviceId } from "../src/config";
+import {
+  loadModels,
+  runLiveness,
+  captureSingleDescriptor,
+} from "../src/faceApi";
 
-export default function QRScanner({ sessionId, studentId }) {
-  const [result, setResult] = useState("");
-  const [hasPermission, setHasPermission] = useState(null);
-  const [facingMode, setFacingMode] = useState("environment");
-  const [locationStatus, setLocationStatus] = useState({ active: false, accuracy: null });
+export default function QRScanner({ sessionId }) {
+  const [step, setStep] = useState("scan"); // scan | face | result
+  const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(false);
 
+  const qrDataRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  // Step 1: scan the rotating QR code.
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then(() => setHasPermission(true))
-      .catch(() => setHasPermission(false));
-    
-    // Start monitoring location accuracy
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        setLocationStatus({
-          active: true,
-          accuracy: position.coords.accuracy,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
+    if (step !== "scan") return;
+
+    const scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [0],
       },
-      (error) => {
-        console.error("Location watch error:", error);
-        setLocationStatus({ active: false, accuracy: null });
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      false
     );
-    
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
-
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    const scanner = new Html5QrcodeScanner("qr-reader", {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      facingMode,
-      disableFlip: true,
-      rememberLastUsedCamera: true,
-      supportedScanTypes: [0],
-    });
 
     scanner.render(
       async (decodedText) => {
-        scanner.clear();
-        handleScan(decodedText);
+        qrDataRef.current = decodedText;
+        try {
+          await scanner.clear();
+        } catch {
+          /* ignore */
+        }
+        setMessage("");
+        setStep("face");
       },
-      (errorMessage) => {
-        console.error("QR Scan Error:", errorMessage);
+      () => {
+        /* per-frame decode errors are expected; ignore */
       }
     );
 
-    return () => scanner.clear();
-  }, [hasPermission, facingMode]);
+    return () => {
+      scanner.clear().catch(() => {});
+    };
+  }, [step]);
 
-  const handleScan = async (data) => {
-    if (!data) return;
+  // Step 2: liveness + face match, then submit.
+  useEffect(() => {
+    if (step !== "face") return;
+    let cancelled = false;
 
-    console.log("Scanned QR Code Data:", data);
-    setResult("Processing... Please wait");
-    
-    try {
-      const position = await getUserLocation();
-      
-      // Display accuracy warning if needed
-      if (position.poorAccuracy) {
-        setResult(`⚠️ Low GPS accuracy (${Math.round(position.accuracy)}m). Try moving to an open area.`);
-        
-        // Optional: Ask user if they want to continue despite poor accuracy
-        if (!window.confirm(`Your GPS accuracy is poor (${Math.round(position.accuracy)}m). This may affect attendance marking. Continue anyway?`)) {
-          setResult("Attendance marking cancelled due to poor GPS accuracy. Please try again in an open area.");
+    const stopCamera = () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    };
+
+    const finish = (ok, msg) => {
+      stopCamera();
+      if (cancelled) return;
+      setSuccess(ok);
+      setMessage(msg);
+      setStep("result");
+    };
+
+    (async () => {
+      try {
+        setMessage("Loading face models...");
+        await loadModels();
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
           return;
         }
-      }
-      
-      const res = await axios.post(
-        "https://scanme-wkq3.onrender.com/sessions/mark-attendance",
-        {
-          studentId,
-          sessionId,
-          latitude: position.latitude,
-          longitude: position.longitude,
-          accuracy: position.accuracy, // Send accuracy to backend
-          scannedQRData: data,
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
         }
-      );
 
-      setResult(res.data.message);
-    } catch (error) {
-      console.error("Error processing QR Code:", error);
-      if (error.latitude === null) {
-        setResult("Location access denied. Please enable location and try again.");
-      } else {
-        setResult(error.response?.data?.error || "Failed to mark attendance");
+        const { live, sawFace } = await runLiveness(videoRef.current, (s) => {
+          if (!cancelled) setMessage(s);
+        });
+        if (cancelled) return;
+
+        if (!sawFace) {
+          return finish(false, "No face detected. Retry in better lighting.");
+        }
+        if (!live) {
+          return finish(
+            false,
+            "Liveness check failed. Please blink or move your head and retry."
+          );
+        }
+
+        setMessage("Verifying your identity...");
+        const descriptor = await captureSingleDescriptor(videoRef.current);
+        if (cancelled) return;
+        if (!descriptor) {
+          return finish(false, "Could not read your face. Please retry.");
+        }
+
+        const res = await clientServer.post("/sessions/mark-attendance", {
+          sessionId,
+          scannedQRData: qrDataRef.current,
+          deviceId: getDeviceId(),
+          faceDescriptor: descriptor,
+        });
+        finish(true, res.data.message || "Attendance marked successfully!");
+      } catch (e) {
+        finish(
+          false,
+          e.response?.data?.error || e.message || "Failed to mark attendance."
+        );
       }
-    }
+    })();
+
+    return () => {
+      cancelled = true;
+      stopCamera();
+    };
+  }, [step, sessionId]);
+
+  const retry = () => {
+    qrDataRef.current = null;
+    setSuccess(false);
+    setMessage("");
+    setStep("scan");
   };
 
   return (
-    <div>
-      <button
-        onClick={() =>
-          setFacingMode(facingMode === "environment" ? "user" : "environment")
-        }
-      >
-        Switch Camera
-      </button>
-      
-      {/* Location Status Indicator */}
-      {locationStatus.active && (
-        <div style={{ 
-          margin: '10px 0', 
-          padding: '8px', 
-          borderRadius: '4px',
-          backgroundColor: locationStatus.accuracy > 100 ? '#fff3cd' : '#d4edda',
-          color: locationStatus.accuracy > 100 ? '#856404' : '#155724',
-          border: `1px solid ${locationStatus.accuracy > 100 ? '#ffeeba' : '#c3e6cb'}`
-        }}>
-          <p style={{ margin: '0' }}>
-            {locationStatus.accuracy > 100 ? 
-              `⚠️ GPS Accuracy: ${Math.round(locationStatus.accuracy)}m (Poor)` : 
-              `✅ GPS Accuracy: ${Math.round(locationStatus.accuracy)}m (Good)`}
-          </p>
-          {locationStatus.accuracy > 100 && (
-            <p style={{ margin: '5px 0 0 0', fontSize: '0.9em' }}>
-              Try moving to an open area away from buildings for better accuracy.
-            </p>
-          )}
-        </div>
+    <div style={{ textAlign: "center" }}>
+      {step === "scan" && (
+        <>
+          <p>Scan the session QR code on screen</p>
+          <div id="qr-reader" />
+        </>
       )}
-      
-      <div id="qr-reader"></div>
-      <p>{result}</p>
+
+      {step === "face" && (
+        <>
+          <p style={{ fontWeight: 600 }}>{message}</p>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: 300,
+              maxWidth: "100%",
+              borderRadius: 8,
+              transform: "scaleX(-1)",
+              background: "#000",
+            }}
+          />
+        </>
+      )}
+
+      {step === "result" && (
+        <>
+          <p
+            style={{
+              color: success ? "green" : "crimson",
+              fontWeight: 600,
+            }}
+          >
+            {message}
+          </p>
+          {!success && <button onClick={retry}>Try Again</button>}
+        </>
+      )}
     </div>
   );
-}
-
-// Get user location
-async function getUserLocation() {
-  return new Promise((resolve, reject) => {
-    const geoOptions = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    };
-    
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // Check if accuracy is too poor (more than 100 meters)
-        if (pos.coords.accuracy > 100) {
-          // Still resolve but with accuracy warning
-          resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            poorAccuracy: true
-          });
-        } else {
-          resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            poorAccuracy: false
-          });
-        }
-      },
-      (err) => {
-        console.error("Geolocation Error:", err);
-        reject({ latitude: null, longitude: null, error: err.message });
-      },
-      geoOptions
-    );
-  });
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import { clientServer } from "../src/config";
 import QRDisplay from "../pages/QRDisplay";
 import styles from "../styles/CourseDetails.module.css"; // Changed to module CSS
@@ -13,10 +12,7 @@ const CourseDetails = () => {
   const [showSessions, setShowSessions] = useState(false);
   const [sessionDetails, setSessionDetails] = useState({
     courseId: "",
-    latitude: "",
-    longitude: "",
     duration: "",
-    radius: "",
   });
   const [sessionId, setSessionId] = useState("");
   const [showQR, setShowQR] = useState(false);
@@ -51,62 +47,39 @@ const CourseDetails = () => {
     setShowAttendanceModal(true);
   };
 
-  const fetchLocation = () => {
-    if (navigator.geolocation) {
-      const geoOptions = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      };
-      
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setSessionDetails((prev) => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-          }));
-        },
-        (error) => {
-          console.error("Error fetching location:", error);
-          alert("Unable to fetch location. Please enable GPS and try again.");
-        },
-        geoOptions
-      );
-    } else {
-      alert("Geolocation is not supported by this browser.");
-    }
-  };
-
   const handleCreateSession = async () => {
     if (isCreatingSession) return; // Prevent duplicate clicks
-    setIsCreatingSession(true); // Disable the button
 
-    if (
-      !sessionDetails.courseId ||
-      !sessionDetails.latitude ||
-      !sessionDetails.longitude ||
-      !sessionDetails.duration ||
-      !sessionDetails.radius
-    ) {
-      return alert("All fields are required!");
+    if (!sessionDetails.courseId || !sessionDetails.duration) {
+      return alert("Duration is required!");
     }
 
+    setIsCreatingSession(true);
     try {
-      const res = await axios.post(
-        "https://scanme-wkq3.onrender.com/sessions/create",
-        sessionDetails
-      );
+      const res = await clientServer.post("/sessions/create", {
+        courseId: sessionDetails.courseId,
+        duration: sessionDetails.duration,
+      });
       alert("Session created successfully!");
       setSessionId(res.data.sessionId);
       setShowSessionModal(false);
       setShowQR(true);
     } catch (error) {
       console.error("Error creating session:", error);
-      alert("Failed to create session.");
+      alert(error.response?.data?.error || "Failed to create session.");
     } finally {
-      setIsCreatingSession(false); // Re-enable the button
+      setIsCreatingSession(false);
+    }
+  };
+
+  const handleResetDevice = async (studentId) => {
+    if (!window.confirm("Reset this student's bound device?")) return;
+    try {
+      await clientServer.post("/users/reset-device", { studentId });
+      alert("Device reset. The student can now mark attendance on a new phone.");
+    } catch (error) {
+      console.error("Error resetting device:", error);
+      alert(error.response?.data?.message || "Failed to reset device.");
     }
   };
 
@@ -123,8 +96,8 @@ const CourseDetails = () => {
       console.log(selectedSessionId);
       console.log(selectedStudent._id);
       console.log(newStatus);
-      const res = await axios.patch(
-        "https://scanme-wkq3.onrender.com/sessions/update-attendance-status",
+      const res = await clientServer.patch(
+        "/sessions/update-attendance-status",
         {
           sessionId: selectedSessionId,
           studentId: selectedStudent._id,
@@ -217,11 +190,10 @@ const CourseDetails = () => {
         <div className={styles["sidebar-footer"]}>
           <button
             onClick={() => {
-              fetchLocation();
-              setSessionDetails((prev) => ({
-                ...prev,
+              setSessionDetails({
                 courseId: course._id,
-              }));
+                duration: "",
+              });
               setShowSessionModal(true);
             }}
             className={styles["create-session-btn"]}
@@ -298,7 +270,7 @@ const CourseDetails = () => {
                     <thead>
                       <tr>
                         <th>Date</th>
-                        <th>Radius (m)</th>
+                        <th>Expires At</th>
                         <th>Duration (mins)</th>
                         <th>Action</th>
                       </tr>
@@ -307,7 +279,7 @@ const CourseDetails = () => {
                       {course.sessions.map((session) => (
                         <tr key={session._id}>
                           <td>{new Date(session.date).toLocaleString()}</td>
-                          <td>{session.radius}</td>
+                          <td>{new Date(session.expiresAt).toLocaleString()}</td>
                           <td>{session.duration}</td>
                           <td>
                             <button
@@ -351,42 +323,6 @@ const CourseDetails = () => {
                 }))
               }
             />
-
-            <input
-              type="number"
-              className={styles["code-input"]}
-              placeholder="Enter Radius (meters)"
-              value={sessionDetails.radius}
-              onChange={(e) =>
-                setSessionDetails((prev) => ({
-                  ...prev,
-                  radius: e.target.value,
-                }))
-              }
-            />
-
-            <div className={styles["location-info"]}>
-              <div>Latitude: {sessionDetails.latitude || "Fetching..."}</div>
-              <div>Longitude: {sessionDetails.longitude || "Fetching..."}</div>
-              {sessionDetails.accuracy && (
-                <div style={{ 
-                  marginTop: '10px',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  backgroundColor: sessionDetails.accuracy > 50 ? '#fff3cd' : '#d4edda',
-                  color: sessionDetails.accuracy > 50 ? '#856404' : '#155724'
-                }}>
-                  GPS Accuracy: {Math.round(sessionDetails.accuracy)}m 
-                  {sessionDetails.accuracy > 50 ? ' (Poor)' : ' (Good)'}
-                  
-                  {sessionDetails.accuracy > 50 && (
-                    <div style={{ marginTop: '5px', fontSize: '0.9em' }}>
-                      Consider moving to an open area for better accuracy.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             <div className={styles["modal-actions"]}>
               <button
@@ -443,11 +379,16 @@ const CourseDetails = () => {
                             className={styles["action-btn"]}
                             onClick={() => {
                               setSelectedStudent(att.studentId);
-                              // setSelectedSessionId(sessionId); // use correct current session context here
                               setShowUpdateAttendanceModal(true);
                             }}
                           >
                             Update
+                          </button>
+                          <button
+                            className={styles["action-btn"]}
+                            onClick={() => handleResetDevice(att.studentId._id)}
+                          >
+                            Reset Device
                           </button>
                         </td>
                       </tr>

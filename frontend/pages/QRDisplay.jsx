@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
+import { BASE_URL, clientServer } from "../src/config";
 
-const socket = io("https://scanme-wkq3.onrender.com", {
-  reconnectionAttempts: 5, // ✅ Retry if disconnected
-  reconnectionDelay: 2000, // ✅ Wait 2s before retrying
+const socket = io(BASE_URL, {
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
 });
 
 export default function QRDisplay({ sessionId }) {
@@ -13,16 +14,27 @@ export default function QRDisplay({ sessionId }) {
   useEffect(() => {
     if (!sessionId) return;
 
-    socket.emit("joinSession", sessionId);
-    console.log(`Joined session: ${sessionId}`);
+    // Show the current code immediately, then live-update via socket.
+    clientServer
+      .get(`/sessions/${sessionId}/current-qr`)
+      .then((res) => {
+        if (res.data.qrCode) {
+          setQrCode(res.data.qrCode);
+          setLoading(false);
+        }
+      })
+      .catch(() => {});
 
-    socket.on("qrUpdate", (newQRCode) => {
+    socket.emit("joinSession", sessionId);
+
+    const onUpdate = (newQRCode) => {
       setQrCode(newQRCode);
-      setLoading(false); // ✅ QR Code received, stop loading
-    });
+      setLoading(false);
+    };
+    socket.on("qrUpdate", onUpdate);
 
     return () => {
-      socket.removeAllListeners("qrUpdate"); // ✅ Clean up listeners
+      socket.off("qrUpdate", onUpdate);
     };
   }, [sessionId]);
 

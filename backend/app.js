@@ -69,13 +69,12 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Run QR updates every 40 seconds (outside io.on("connection"))
+// ✅ Rotate QR codes every 15 seconds (outside io.on("connection"))
 setInterval(async () => {
-  console.log("♻️ Updating QR codes...");
   const updatedSessions = await updateQRCode();
   updatedSessions.forEach(({ sessionId, newQRCode }) => {
     io.to(sessionId.toString()).emit("qrUpdate", newQRCode);
   });
-}, 40000);
+}, 15000);
 
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

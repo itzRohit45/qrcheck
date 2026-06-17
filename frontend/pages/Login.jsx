@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { clientServer } from "../src/config";
 import styles from "../styles/Login.module.css";
 import see from "../assets/see.png";
 import hide from "../assets/hide.png";
@@ -20,10 +21,7 @@ const Login = () => {
     if (email && password) {
       const formData = { email, password };
       try {
-        const response = await axios.post(
-          "https://scanme-wkq3.onrender.com/users/signin",
-          formData
-        );
+        const response = await clientServer.post("/users/signin", formData);
         const { user, type, token } = response.data;
 
         localStorage.setItem("email", user.email);
@@ -31,6 +29,11 @@ const Login = () => {
         localStorage.setItem("dob", user.dob);
         localStorage.setItem("type", type);
         localStorage.setItem("token", token);
+        localStorage.setItem("id", user._id);
+        localStorage.setItem(
+          "faceEnrolled",
+          user.faceEnrolled ? "true" : "false"
+        );
 
         setToken(token);
         if (type === "student") {

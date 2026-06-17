@@ -1,13 +1,45 @@
 import QRCode from "qrcode";
+import crypto from "crypto";
 import { Session } from "../model/Session.js";
 import { Course } from "../model/Course.js";
+import { Student } from "../model/Student.js";
+
+const GRACE_MS = 8000; // previousNonce stays valid this long after a rotation
+const FACE_MATCH_THRESHOLD = 0.5; // euclidean distance; lower = stricter
+
+const generateNonce = () => crypto.randomBytes(16).toString("hex");
+
+const buildQrPayload = (sessionId, nonce) =>
+  JSON.stringify({ sessionId: sessionId.toString(), nonce });
+
+const euclideanDistance = (a, b) => {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    const d = a[i] - b[i];
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+};
+
+// Smallest distance between the live descriptor and any enrolled reference.
+const bestFaceDistance = (references, probe) => {
+  let best = Infinity;
+  for (const ref of references) {
+    if (!Array.isArray(ref) || ref.length !== probe.length) continue;
+    const d = euclideanDistance(ref, probe);
+    if (d < best) best = d;
+  }
+  return best;
+};
 
 export const createSession = async (req, res) => {
   try {
-    const { courseId, latitude, longitude, duration, radius } = req.body;
+    const { courseId, duration } = req.body;
 
-    if (!courseId || !latitude || !longitude || !duration || !radius) {
-      return res.status(400).json({ error: "All fields are required!" });
+    if (!courseId || !duration) {
+      return res
+        .status(400)
+        .json({ error: "courseId and duration are required!" });
     }
 
     const course = await Course.findById(courseId).populate("students");
@@ -15,36 +47,33 @@ export const createSession = async (req, res) => {
       return res.status(404).json({ error: "Course not found!" });
     }
 
-    // Generate session data for QR Code
-    const sessionData = `${courseId}-${Date.now()}`;
-    const qrCodeUrl = await QRCode.toDataURL(sessionData);
-
-    // Calculate session expiration time
     const expiresAt = new Date(Date.now() + duration * 60000);
 
-    // ✅ Prepopulate attendance with all students as "Absent"
+    // Prepopulate attendance with all enrolled students as "Absent"
     const initialAttendance = course.students.map((student) => ({
       studentId: student._id,
       status: "Absent",
       scannedAt: null,
-      scanLocation: null,
     }));
 
-    // Create session entry in DB
     const session = new Session({
       courseId,
-      location: { latitude, longitude },
       duration,
       expiresAt,
-      radius,
-      currentQRCode: qrCodeUrl,
-      lastQRUpdatedAt: Date.now(),
-      attendance: initialAttendance, // ✅ Adding all students with "Absent"
+      attendance: initialAttendance,
     });
+
+    // Give the session a valid QR immediately (no blank screen before first tick)
+    const nonce = generateNonce();
+    session.currentNonce = nonce;
+    session.previousNonce = null;
+    session.nonceUpdatedAt = new Date();
+    session.currentQRCode = await QRCode.toDataURL(
+      buildQrPayload(session._id, nonce)
+    );
 
     await session.save();
 
-    // ✅ Add session ID to the respective class
     course.sessions.push(session._id);
     await course.save();
 
@@ -58,28 +87,28 @@ export const createSession = async (req, res) => {
   }
 };
 
-// Generate and update QR codes every 10 sec
+// Rotate the nonce + QR for every active session (called on an interval in app.js).
 export async function updateQRCode() {
   try {
     const activeSessions = await Session.find({
-      expiresAt: { $gt: Date.now() },
+      expiresAt: { $gt: new Date() },
     });
 
-    let updatedSessions = [];
+    const updatedSessions = [];
     for (const session of activeSessions) {
-      const qrData = JSON.stringify({
-        sessionId: session._id.toString(), // Ensuring string format
-        timestamp: Date.now(),
+      const nonce = generateNonce();
+      session.previousNonce = session.currentNonce;
+      session.currentNonce = nonce;
+      session.nonceUpdatedAt = new Date();
+      session.currentQRCode = await QRCode.toDataURL(
+        buildQrPayload(session._id, nonce)
+      );
+      await session.save();
+
+      updatedSessions.push({
+        sessionId: session._id,
+        newQRCode: session.currentQRCode,
       });
-
-      const newQRCode = await QRCode.toDataURL(qrData);
-      if (session.currentQRCode !== newQRCode) {
-        session.currentQRCode = newQRCode;
-        session.lastQRUpdatedAt = new Date();
-        await session.save();
-      }
-
-      updatedSessions.push({ sessionId: session._id, newQRCode });
     }
     return updatedSessions;
   } catch (error) {
@@ -88,33 +117,40 @@ export async function updateQRCode() {
   }
 }
 
-// ✅ Calculate Distance between two coordinates
-const getDistanceFromLatLonInMeters = (lat1, lon1, lat2, lon2) => {
-  const R = 6371000; // Radius of Earth in meters
-  const toRad = (value) => (value * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in meters
+// Lets the QR display fetch the current code on mount (before the next socket tick).
+export const getCurrentQR = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await Session.findById(sessionId).select(
+      "currentQRCode expiresAt"
+    );
+    if (!session) {
+      return res.status(404).json({ error: "Session not found!" });
+    }
+    return res.json({
+      qrCode: session.currentQRCode,
+      expiresAt: session.expiresAt,
+      expired: session.expiresAt < new Date(),
+    });
+  } catch (error) {
+    console.error("Error fetching current QR:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const markAttendance = async (req, res) => {
   try {
-    console.log("Received markAttendance request:", req.body);
+    const { sessionId, scannedQRData, deviceId, faceDescriptor } = req.body;
+    // Layer 4: the student is taken from the auth token, never trusted from the body.
+    const studentId = req.user?.id;
 
-    const { studentId, sessionId, latitude, longitude, accuracy, scannedQRData } =
-      req.body;
-
-    if (!studentId || !sessionId || !latitude || !longitude || !scannedQRData) {
-      return res.status(400).json({ error: "All fields are required!" });
+    if (!studentId) {
+      return res.status(401).json({ error: "Not authenticated." });
+    }
+    if (!sessionId || !scannedQRData || !deviceId) {
+      return res
+        .status(400)
+        .json({ error: "Session, QR data and device id are required!" });
     }
 
     const session = await Session.findById(sessionId);
@@ -122,83 +158,94 @@ export const markAttendance = async (req, res) => {
       return res.status(404).json({ error: "Session not found!" });
     }
 
-    console.log("Session Location:", session.location);
-    console.log("User Location:", { latitude, longitude });
-    console.log("Location Accuracy:", accuracy || "Not provided");
-    console.log("Allowed Radius:", session.radius);
+    // Layer 2: server-side time validation (client clock is never trusted)
+    if (session.expiresAt < new Date()) {
+      return res.status(400).json({ error: "Session has ended." });
+    }
 
+    // Layer 1: QR payload + nonce must match what the server currently issues
     let qrData;
     try {
       qrData = JSON.parse(scannedQRData);
-      console.log("Parsed QR Data:", qrData);
-    } catch (error) {
+    } catch {
       return res.status(400).json({ error: "Invalid QR Code!" });
     }
 
     if (qrData.sessionId !== session._id.toString()) {
-      return res.status(400).json({ error: "QR Code does not match session!" });
-    }
-
-    if (Date.now() - qrData.timestamp > 40000) {
-      return res.status(400).json({ error: "QR Code expired!" });
-    }
-
-    const distance = getDistanceFromLatLonInMeters(
-      session.location.latitude,
-      session.location.longitude,
-      latitude,
-      longitude
-    );
-
-    console.log("Calculated Distance:", distance);
-    
-    // Adjust allowed radius based on accuracy if provided
-    let adjustedRadius = session.radius;
-    if (accuracy && accuracy > 20) { // Only adjust if accuracy is worse than 20m
-      // Dynamic radius adjustment - add part of the accuracy value to the radius
-      const accuracyBuffer = Math.min(accuracy * 0.8, 50); // Cap the adjustment at 50m
-      adjustedRadius += accuracyBuffer;
-      console.log(`Adjusted radius to ${adjustedRadius}m due to GPS accuracy of ${accuracy}m`);
-    }
-
-    if (distance > adjustedRadius) {
       return res
         .status(400)
-        .json({ 
-          error: accuracy > 50 
-            ? `You appear to be outside the allowed area. Your GPS accuracy is poor (${Math.round(accuracy)}m), which may be causing this issue. Try moving to an open area.` 
-            : "You are outside the allowed radius!" 
-        });
+        .json({ error: "QR Code does not match this session!" });
     }
 
-    let studentAttendance = session.attendance.find(
-      (record) => record.studentId.toString() === studentId
+    const matchesCurrent =
+      qrData.nonce && qrData.nonce === session.currentNonce;
+    const matchesPrevious =
+      qrData.nonce &&
+      qrData.nonce === session.previousNonce &&
+      Date.now() - new Date(session.nonceUpdatedAt).getTime() <= GRACE_MS;
+
+    if (!matchesCurrent && !matchesPrevious) {
+      return res
+        .status(400)
+        .json({ error: "QR Code expired. Scan the latest code on screen." });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ error: "Student not found!" });
+    }
+
+    // Layer 3: device binding (one account == one device)
+    let deviceJustBound = false;
+    if (!student.deviceId) {
+      student.deviceId = deviceId;
+      deviceJustBound = true;
+    } else if (student.deviceId !== deviceId) {
+      return res.status(403).json({
+        error:
+          "This account is locked to another device. Ask your teacher to reset your device.",
+      });
+    }
+
+    // Layer 5: face verification — the accept/reject decision is made on the server
+    if (!student.faceDescriptors || student.faceDescriptors.length === 0) {
+      return res.status(403).json({
+        error: "Face not enrolled yet. Please complete face enrollment first.",
+      });
+    }
+    if (!Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
+      return res
+        .status(400)
+        .json({ error: "Invalid face scan. Please try again." });
+    }
+    const distance = bestFaceDistance(student.faceDescriptors, faceDescriptor);
+    if (distance > FACE_MATCH_THRESHOLD) {
+      return res
+        .status(403)
+        .json({ error: "Face does not match the enrolled student." });
+    }
+
+    // All checks passed — mark present
+    const record = session.attendance.find(
+      (r) => r.studentId.toString() === studentId.toString()
     );
 
-    if (studentAttendance) {
-      if (studentAttendance.status === "Present") {
+    if (record) {
+      if (record.status === "Present") {
+        if (deviceJustBound) await student.save();
         return res.status(400).json({ error: "Attendance already marked!" });
       }
-      studentAttendance.status = "Present";
-      studentAttendance.scannedAt = new Date();
-      studentAttendance.scanLocation = { 
-        latitude, 
-        longitude,
-        accuracy: accuracy || null 
-      };
+      record.status = "Present";
+      record.scannedAt = new Date();
     } else {
       session.attendance.push({
         studentId,
         status: "Present",
         scannedAt: new Date(),
-        scanLocation: { 
-          latitude, 
-          longitude,
-          accuracy: accuracy || null
-        },
       });
     }
 
+    if (deviceJustBound) await student.save();
     await session.save();
     return res.json({ message: "Attendance marked successfully!" });
   } catch (error) {
@@ -209,7 +256,6 @@ export const markAttendance = async (req, res) => {
 
 export const updateAttendanceStatus = async (req, res) => {
   try {
-    console.log("Request Body:", req.body);
     const { sessionId, studentId, status } = req.body;
 
     if (!sessionId || !studentId || !status) {
@@ -220,29 +266,12 @@ export const updateAttendanceStatus = async (req, res) => {
       return res.status(400).json({ error: "Invalid status value!" });
     }
 
-    // Get the session document to extract location for 'Present'
-    const session = await Session.findById(sessionId);
-    if (!session) {
-      return res.status(404).json({ error: "Session not found!" });
-    }
-
-    // Extract location (needed if status is Present)
-    const location = session.location;
-
-    // Update attendance using MongoDB positional operator `$`
     const updateResult = await Session.updateOne(
       { _id: sessionId, "attendance.studentId": studentId },
       {
         $set: {
           "attendance.$.status": status,
           "attendance.$.scannedAt": status === "Present" ? new Date() : null,
-          "attendance.$.scanLocation":
-            status === "Present"
-              ? {
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                }
-              : null,
         },
       }
     );

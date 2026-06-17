@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { clientServer } from "../src/config";
 import "../styles/ForgotPassword.css";
 
 const ForgotPassword = () => {
@@ -35,13 +36,10 @@ const ForgotPassword = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.post(
-        "https://scanme-wkq3.onrender.com/users/sendmail",
-        {
-          email: email,
-          type: "forgot",
-        }
-      );
+      const response = await clientServer.post("/users/sendmail", {
+        email: email,
+        type: "forgot",
+      });
 
       setOtp(response.data.otp);
       setCurrentPage(2);
@@ -85,13 +83,10 @@ const ForgotPassword = () => {
       setLoading(true);
       setError("");
 
-      await axios.post(
-        "https://scanme-wkq3.onrender.com/users/forgotpassword",
-        {
-          email,
-          password,
-        }
-      );
+      await clientServer.post("/users/forgotpassword", {
+        email,
+        password,
+      });
 
       // Show success message before redirecting
       setError("");

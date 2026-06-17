@@ -16,6 +16,7 @@
     "@fontsource/poppins": "^5.2.5",
     "@mui/icons-material": "^6.4.8",
     "@mui/material": "^6.4.8",
+    "@vladmandic/face-api": "^1.7.15",
     "@zxing/browser": "^0.1.5",
     "axios": "^1.7.4",
     "buffer": "^6.0.3",

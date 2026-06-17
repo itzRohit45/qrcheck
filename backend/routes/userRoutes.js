@@ -14,4 +14,10 @@ router.post("/sendmail", UserController.SendMail);
 
 router.get("/user", UserController.GetUserDetails);
 
+// Layer 5: student enrolls their face descriptors
+router.post("/enroll-face", JWT.verifyToken, UserController.EnrollFace);
+
+// Layer 3: teacher resets a student's bound device
+router.post("/reset-device", JWT.verifyToken, UserController.ResetDevice);
+
 export default router;

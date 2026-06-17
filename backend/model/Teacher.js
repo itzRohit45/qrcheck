@@ -7,6 +7,7 @@ const teacherSchema = new Schema({
   dept: { type: String, required: true },
   password: { type: String, required: true },
   courses: [{ type: Schema.Types.ObjectId, ref: "Course" }], // List of courses created by teacher
+  tokenVersion: { type: Number, default: 0 }, // Invalidates old logins (Layer 4)
 });
 
 export const Teacher = model("Teacher", teacherSchema);

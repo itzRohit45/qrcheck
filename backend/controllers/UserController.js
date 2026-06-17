@@ -33,8 +33,23 @@ async function Login(req, res) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const token = JWT.generateToken({ email: user.email });
-    user.type = type;
+    // Layer 4: bump tokenVersion so any previously issued token is invalidated.
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    await user.save();
+
+    const token = JWT.generateToken({
+      id: user._id,
+      email: user.email,
+      type,
+      tokenVersion: user.tokenVersion,
+    });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    delete userObj.faceDescriptors;
+    userObj.type = type;
+    userObj.faceEnrolled =
+      type === "student" ? (user.faceDescriptors?.length || 0) > 0 : true;
 
     res
       .cookie("token", token, {
@@ -43,7 +58,7 @@ async function Login(req, res) {
         sameSite: "None",
       })
       .status(200)
-      .json({ user, type, token });
+      .json({ user: userObj, type, token });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error during login" });
@@ -219,7 +234,13 @@ async function GetUserDetails(req, res) {
     }
 
     if (user) {
-      res.status(200).json({ user: { ...user.toObject(), type } });
+      const obj = user.toObject();
+      delete obj.password;
+      delete obj.faceDescriptors;
+      obj.type = type;
+      obj.faceEnrolled =
+        type === "student" ? (user.faceDescriptors?.length || 0) > 0 : true;
+      res.status(200).json({ user: obj });
     } else {
       res.status(404).json({ message: "User not found." });
     }
@@ -229,12 +250,76 @@ async function GetUserDetails(req, res) {
   }
 }
 
+// Layer 5: store a student's enrolled face descriptors (sent by the browser).
+async function EnrollFace(req, res) {
+  try {
+    if (req.user?.type !== "student") {
+      return res.status(403).json({ message: "Only students enroll a face." });
+    }
+
+    const { descriptors } = req.body;
+    if (
+      !Array.isArray(descriptors) ||
+      descriptors.length === 0 ||
+      !descriptors.every(
+        (d) => Array.isArray(d) && d.length === 128 && d.every((n) => typeof n === "number")
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid face data. Please capture again." });
+    }
+
+    const student = await Student.findById(req.user.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    student.faceDescriptors = descriptors;
+    await student.save();
+
+    return res.status(200).json({ message: "Face enrolled successfully." });
+  } catch (err) {
+    console.error("Error enrolling face:", err);
+    res.status(500).json({ message: "Error enrolling face." });
+  }
+}
+
+// Layer 3: a teacher clears a student's device binding (e.g. they changed phones).
+async function ResetDevice(req, res) {
+  try {
+    if (req.user?.type !== "teacher") {
+      return res.status(403).json({ message: "Only teachers can reset devices." });
+    }
+
+    const { studentId } = req.body;
+    if (!studentId) {
+      return res.status(400).json({ message: "studentId is required." });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    student.deviceId = null;
+    await student.save();
+
+    return res.status(200).json({ message: "Device reset successfully." });
+  } catch (err) {
+    console.error("Error resetting device:", err);
+    res.status(500).json({ message: "Error resetting device." });
+  }
+}
+
 const UserController = {
   Login,
   Signup,
   ForgotPassword,
   SendMail,
   GetUserDetails,
+  EnrollFace,
+  ResetDevice,
 };
 
 export default UserController;

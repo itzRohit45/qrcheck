@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "../styles/Signup.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { clientServer } from "../src/config";
 import see from "../assets/see.png";
 import hide from "../assets/hide.png";
 
@@ -40,10 +41,7 @@ const Signup = () => {
         };
 
         try {
-          await axios.post(
-            "https://scanme-wkq3.onrender.com/users/signup",
-            formData
-          );
+          await clientServer.post("/users/signup", formData);
           navigate("/login");
         } catch (err) {
           console.log(err);
@@ -69,13 +67,10 @@ const Signup = () => {
     document.querySelector(`.${styles.secondSlide}`).style.display = "block";
 
     try {
-      const res = await axios.post(
-        "https://scanme-wkq3.onrender.com/users/sendmail",
-        {
-          email,
-          type: "registration",
-        }
-      );
+      const res = await clientServer.post("/users/sendmail", {
+        email,
+        type: "registration",
+      });
       setOtp(res.data.otp);
     } catch (err) {
       console.log(err);

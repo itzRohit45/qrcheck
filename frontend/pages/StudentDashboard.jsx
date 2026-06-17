@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/StudentDashboard.module.css";
 import { clientServer } from "../src/config";
+import FaceEnroll from "./FaceEnroll";
 
 const StudentDashboard = () => {
   const [courses, setCourses] = useState([]);
@@ -11,6 +12,8 @@ const StudentDashboard = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [faceEnrolled, setFaceEnrolled] = useState(true);
+  const [showFaceEnroll, setShowFaceEnroll] = useState(false);
 
   const navigate = useNavigate();
 
@@ -31,6 +34,10 @@ const StudentDashboard = () => {
             "name",
             res.data.user.name || userEmail.split("@")[0]
           );
+          const enrolled = !!res.data.user.faceEnrolled;
+          setFaceEnrolled(enrolled);
+          localStorage.setItem("faceEnrolled", enrolled ? "true" : "false");
+          if (!enrolled) setShowFaceEnroll(true);
         }
       } catch (error) {
         console.error("Error fetching user details:", error);
@@ -160,7 +167,30 @@ const StudentDashboard = () => {
             <p className={styles["welcome-text"]}>Welcome back, {userName}!</p>
             <h1 style={{ marginTop: "5px" }}>Your Classes</h1>
           </div>
+          <button
+            onClick={() => setShowFaceEnroll(true)}
+            className={styles["join-btn"]}
+            style={{ alignSelf: "center" }}
+          >
+            {faceEnrolled ? "Update Face ID" : "Set up Face ID"}
+          </button>
         </header>
+
+        {!faceEnrolled && (
+          <div
+            style={{
+              margin: "12px 0",
+              padding: "12px",
+              borderRadius: 8,
+              background: "#fff3cd",
+              color: "#856404",
+              border: "1px solid #ffeeba",
+            }}
+          >
+            You must set up Face ID before you can mark attendance.{" "}
+            <button onClick={() => setShowFaceEnroll(true)}>Set up now</button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className={styles["loading-container"]}>
@@ -206,6 +236,21 @@ const StudentDashboard = () => {
           </div>
         )}
       </main>
+
+      {/* Face Enrollment Modal */}
+      {showFaceEnroll && (
+        <div className={styles.modal}>
+          <div className={styles["modal-content"]}>
+            <FaceEnroll
+              onDone={() => {
+                setFaceEnrolled(true);
+                setShowFaceEnroll(false);
+              }}
+              onCancel={() => setShowFaceEnroll(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Join Class Modal */}
       {showJoinModal && (
