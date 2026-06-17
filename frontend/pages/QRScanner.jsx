@@ -84,7 +84,7 @@ export default function QRScanner({ sessionId, onSuccess }) {
       setStep("result");
       if (ok && onSuccess) {
         setTimeout(() => {
-          if (!cancelled) onSuccess();
+          onSuccess();
         }, 1500);
       }
     };

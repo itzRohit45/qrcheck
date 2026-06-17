@@ -45,7 +45,7 @@ const Signup = () => {
           await clientServer.post("/users/signup", formData);
           
           // Auto login after successful signup
-          const loginRes = await clientServer.post("/users/login", {
+          const loginRes = await clientServer.post("/users/signin", {
             email,
             password,
             type: userType
