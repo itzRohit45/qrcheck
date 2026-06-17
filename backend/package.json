@@ -12,6 +12,7 @@
   "author": "Rohit, Jovan and Kishore",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.6.8",
     "bcryptjs": "^3.0.2",
     "body-parser": "^1.20.2",
