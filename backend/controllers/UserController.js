@@ -174,6 +174,9 @@ async function ForgotPassword(req, res) {
 }
 
 async function SendMail(req, res) {
+  console.log("=== [SendMail API Called] ===");
+  console.log("Request body:", req.body);
+  
   const { email, type } = req.body;
   const otp = Math.floor(100000 + Math.random() * 900000);
 
@@ -209,14 +212,21 @@ The Support Team`;
     return res.status(400).json({ message: "Invalid email type." });
   }
 
+  console.log("Preparing to call Mailer.sendMail with SendGrid...");
+  
+  // NOTE: If this hangs, it will never log the result!
   const result = await Mailer.sendMail(email, subject, text);
 
+  console.log("Mailer.sendMail returned result:", result.success);
+
   if (result.success) {
+    console.log("Sending 200 response to client");
     res.status(200).json({
       message: "OTP sent successfully. Please check your email.",
       otp: otp,
     });
   } else {
+    console.error("Sending 500 response to client because Mailer failed");
     res.status(500).json({ message: "Failed to send OTP. Please try again." });
   }
 }
