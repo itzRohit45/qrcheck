@@ -122,7 +122,12 @@ const Signup = () => {
 
   useEffect(() => {
     if (token !== "") {
-      navigate("/dashboard");
+      const type = localStorage.getItem("type");
+      if (type === "teacher") {
+        navigate("/teacher-dashboard");
+      } else {
+        navigate("/student-dashboard");
+      }
     }
   }, [token, navigate]);
 

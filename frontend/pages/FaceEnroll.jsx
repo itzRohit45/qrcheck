@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { clientServer } from "../src/config";
-import { loadModels, captureDescriptors } from "../src/faceApi";
+import { loadModels, captureSingleDescriptor } from "../src/faceApi";
 
 export default function FaceEnroll({ onDone, onCancel }) {
   const videoRef = useRef(null);
@@ -8,6 +8,15 @@ export default function FaceEnroll({ onDone, onCancel }) {
   const [status, setStatus] = useState("Loading Face Recognition...");
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [descriptors, setDescriptors] = useState([]);
+  
+  const prompts = [
+    "Look Straight",
+    "Slightly Turn Left",
+    "Slightly Turn Right",
+    "Look Slightly Up",
+    "Look Slightly Down"
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -46,29 +55,35 @@ export default function FaceEnroll({ onDone, onCancel }) {
     }
   };
 
-  const handleEnroll = async () => {
+  const handleEnrollStep = async () => {
     if (!ready || busy) return;
     setBusy(true);
+    
+    const currentIndex = descriptors.length;
+    setStatus(`Capturing: ${prompts[currentIndex]}...`);
+    
     try {
-      const prompts = [
-        "Look Straight",
-        "Slightly Turn Left",
-        "Slightly Turn Right",
-        "Look Slightly Up",
-        "Look Slightly Down"
-      ];
-      const descriptors = await captureDescriptors(videoRef.current, 5, setStatus, prompts);
-      if (descriptors.length < 3) {
-        setStatus("Could not read your face clearly. Improve lighting and retry.");
+      const descriptor = await captureSingleDescriptor(videoRef.current);
+      if (!descriptor) {
+        setStatus("Could not read your face clearly. Please try again.");
         setBusy(false);
         return;
       }
-      setStatus("Saving...");
-      await clientServer.post("/users/enroll-face", { descriptors });
-      localStorage.setItem("faceEnrolled", "true");
-      setStatus("Face enrolled successfully!");
-      stopCamera();
-      onDone && onDone();
+      
+      const newDescriptors = [...descriptors, descriptor];
+      setDescriptors(newDescriptors);
+      
+      if (newDescriptors.length === prompts.length) {
+        setStatus("Saving...");
+        await clientServer.post("/users/enroll-face", { descriptors: newDescriptors });
+        localStorage.setItem("faceEnrolled", "true");
+        setStatus("Face enrolled successfully!");
+        stopCamera();
+        if (onDone) onDone();
+      } else {
+        setStatus(`Next: ${prompts[newDescriptors.length]}. Click Capture.`);
+        setBusy(false);
+      }
     } catch (e) {
       setStatus(e.response?.data?.message || "Enrollment failed. Please retry.");
       setBusy(false);
@@ -124,8 +139,8 @@ export default function FaceEnroll({ onDone, onCancel }) {
             Cancel
           </button>
         )}
-        <button onClick={handleEnroll} disabled={!ready || busy}>
-          {busy ? "Capturing..." : "Capture & Enroll"}
+        <button onClick={handleEnrollStep} disabled={!ready || busy}>
+          {busy ? "Capturing..." : `Capture ${descriptors.length + 1}/${prompts.length}`}
         </button>
       </div>
     </div>
