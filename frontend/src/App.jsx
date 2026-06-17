@@ -14,9 +14,12 @@ import {
 import CourseDetails from "../pages/CourseDetails";
 import StudentCoursePage from "../pages/StudentCoursePage";
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} />
       <Nav />
       <Routes>
         <Route path="/" element={<HomeLayout />}>

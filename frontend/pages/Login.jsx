@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { clientServer } from "../src/config";
 import styles from "../styles/Login.module.css";
+import toast from "react-hot-toast";
 import see from "../assets/see.png";
 import hide from "../assets/hide.png";
 
@@ -46,11 +47,11 @@ const Login = () => {
           navigate("/teacher-dashboard");
         }
       } catch (err) {
-        alert("Invalid email or password");
+        toast.error("Invalid email or password");
         e.target.reset();
       }
     } else {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       e.target.reset();
     }
   };

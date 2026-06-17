@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../styles/StudentDashboard.module.css";
 import { clientServer } from "../src/config";
 import FaceEnroll from "./FaceEnroll";
+import toast from "react-hot-toast";
 
 const StudentDashboard = () => {
   const [courses, setCourses] = useState([]);
@@ -41,7 +42,7 @@ const StudentDashboard = () => {
         }
       } catch (error) {
         console.error("Error fetching user details:", error);
-        alert("Failed to load user information. Please try logging in again.");
+        toast.error("Failed to load user information. Please try logging in again.");
         navigate("/login");
       }
     };
@@ -67,9 +68,9 @@ const StudentDashboard = () => {
   }, [studentId]);
 
   const handleJoinClass = async () => {
-    if (!studentId) return alert("Student ID not found");
-    if (!invitationCode.trim()) return alert("Invitation code is required");
-    if (!courseName.trim()) return alert("Course name is required");
+    if (!studentId) return toast.error("Student ID not found");
+    if (!invitationCode.trim()) return toast.error("Invitation code is required");
+    if (!courseName.trim()) return toast.error("Course name is required");
 
     try {
       await clientServer.post("/courses/join-class", {
@@ -86,9 +87,10 @@ const StudentDashboard = () => {
         `/courses/student/${studentId}/classes`
       );
       setCourses(updatedCourses.data);
+      toast.success("Joined class successfully!");
     } catch (error) {
       console.error("Error joining class:", error);
-      alert(error.response?.data?.error || "Invalid data or server error");
+      toast.error(error.response?.data?.error || "Invalid data or server error");
     }
   };
 

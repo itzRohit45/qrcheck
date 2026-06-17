@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { clientServer } from "../src/config";
 import QRDisplay from "../pages/QRDisplay";
 import styles from "../styles/CourseDetails.module.css"; // Changed to module CSS
+import toast from "react-hot-toast";
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const CourseDetails = () => {
     if (isCreatingSession) return; // Prevent duplicate clicks
 
     if (!sessionDetails.courseId || !sessionDetails.duration) {
-      return alert("Duration is required!");
+      return toast.error("Duration is required!");
     }
 
     setIsCreatingSession(true);
@@ -60,13 +61,13 @@ const CourseDetails = () => {
         courseId: sessionDetails.courseId,
         duration: sessionDetails.duration,
       });
-      alert("Session created successfully!");
+      toast.success("Session created successfully!");
       setSessionId(res.data.sessionId);
       setShowSessionModal(false);
       setShowQR(true);
     } catch (error) {
       console.error("Error creating session:", error);
-      alert(error.response?.data?.error || "Failed to create session.");
+      toast.error(error.response?.data?.error || "Failed to create session.");
     } finally {
       setIsCreatingSession(false);
     }
@@ -76,10 +77,10 @@ const CourseDetails = () => {
     if (!window.confirm("Reset this student's bound device?")) return;
     try {
       await clientServer.post("/users/reset-device", { studentId });
-      alert("Device reset. The student can now mark attendance on a new phone.");
+      toast.success("Device reset. The student can now mark attendance on a new phone.");
     } catch (error) {
       console.error("Error resetting device:", error);
-      alert(error.response?.data?.message || "Failed to reset device.");
+      toast.error(error.response?.data?.message || "Failed to reset device.");
     }
   };
 
@@ -89,7 +90,7 @@ const CourseDetails = () => {
     console.log("newStatus:", newStatus);
 
     if (!selectedSessionId || !selectedStudent || !newStatus) {
-      return alert("All fields are required!");
+      return toast.error("All fields are required!");
     }
 
     try {
@@ -104,12 +105,12 @@ const CourseDetails = () => {
           status: newStatus,
         }
       );
-      alert("Attendance status updated successfully!");
+      toast.success("Attendance status updated successfully!");
       setShowUpdateAttendanceModal(false);
       fetchCourseDetails(); // Refresh course details
     } catch (error) {
       console.error("Error updating attendance status:", error);
-      alert("Failed to update attendance status.");
+      toast.error("Failed to update attendance status.");
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/TeacherDashboard.module.css";
 import { clientServer } from "../src/config";
+import toast from "react-hot-toast";
 
 const TeacherDashboard = () => {
   const [classes, setClasses] = useState([]);
@@ -36,7 +37,7 @@ const TeacherDashboard = () => {
         }
       } catch (error) {
         console.error("Error fetching user details:", error);
-        alert("Failed to load user information. Please try logging in again.");
+        toast.error("Failed to load user information. Please try logging in again.");
         navigate("/login");
       }
     };
@@ -62,9 +63,9 @@ const TeacherDashboard = () => {
   }, [teacherId]);
 
   const handleCreateClass = async () => {
-    if (!teacherId) return alert("Teacher ID not found");
+    if (!teacherId) return toast.error("Teacher ID not found");
     if (!courseName.trim() || !courseCode.trim() || !invitationCode.trim())
-      return alert("All fields are required!");
+      return toast.error("All fields are required!");
 
     try {
       await clientServer.post("/courses/create-class", {
@@ -83,9 +84,10 @@ const TeacherDashboard = () => {
         `/courses/teacher/${teacherId}/classes`
       );
       setClasses(updatedClasses.data);
+      toast.success("Class created successfully!");
     } catch (error) {
       console.error("Error creating class:", error);
-      alert(error.response?.data?.message || "Something went wrong!");
+      toast.error(error.response?.data?.message || "Something went wrong!");
     }
   };
 

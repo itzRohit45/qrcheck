@@ -3,6 +3,7 @@ import styles from "../styles/Signup.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { clientServer } from "../src/config";
+import toast from "react-hot-toast";
 import see from "../assets/see.png";
 import hide from "../assets/hide.png";
 
@@ -47,10 +48,10 @@ const Signup = () => {
           console.log(err);
         }
       } else {
-        alert("Passwords do not match");
+        toast.error("Passwords do not match");
       }
     } else {
-      alert("Please fill all the fields");
+      toast.error("Please fill all the fields");
     }
   };
 
@@ -59,12 +60,9 @@ const Signup = () => {
     let email = document.querySelector(`input[name='email']`).value;
 
     if (name.length === 0 || email.length === 0) {
-      alert("Please fill all the fields");
+      toast.error("Please fill all the fields");
       return;
     }
-
-    document.querySelector(`.${styles.firstSlide}`).style.display = "none";
-    document.querySelector(`.${styles.secondSlide}`).style.display = "block";
 
     try {
       const res = await clientServer.post("/users/sendmail", {
@@ -72,20 +70,24 @@ const Signup = () => {
         type: "registration",
       });
       setOtp(res.data.otp);
+      
+      document.querySelector(`.${styles.firstSlide}`).style.display = "none";
+      document.querySelector(`.${styles.secondSlide}`).style.display = "block";
     } catch (err) {
       console.log(err);
+      toast.error(err.response?.data?.message || "Failed to send OTP. Please try again.");
     }
   };
 
   const toggleThree = () => {
     let otp = document.querySelector(`input[name='otp']`).value;
     if (otp.length === 0) {
-      alert("Please enter OTP");
+      toast.error("Please enter OTP");
     } else if (parseInt(otp) === parseInt(SaveOTP)) {
       document.querySelector(`.${styles.secondSlide}`).style.display = "none";
       document.querySelector(`.${styles.thirdSlide}`).style.display = "block";
     } else {
-      alert("Invalid OTP");
+      toast.error("Invalid OTP");
     }
   };
 

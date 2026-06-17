@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { clientServer } from "../src/config";
 import "../styles/ForgotPassword.css";
+import toast from "react-hot-toast";
 
 const ForgotPassword = () => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -14,7 +15,6 @@ const ForgotPassword = () => {
   const [otp, setInputOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -28,13 +28,12 @@ const ForgotPassword = () => {
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
-      setError("Please enter your email");
+      toast.error("Please enter your email");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
 
       const response = await clientServer.post("/users/sendmail", {
         email: email,
@@ -43,9 +42,10 @@ const ForgotPassword = () => {
 
       setOtp(response.data.otp);
       setCurrentPage(2);
+      toast.success("OTP sent successfully!");
     } catch (error) {
       console.error("Error sending OTP:", error);
-      setError("Failed to send OTP. Please try again.");
+      toast.error("Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -54,15 +54,14 @@ const ForgotPassword = () => {
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     if (!otp) {
-      setError("Please enter OTP");
+      toast.error("Please enter OTP");
       return;
     }
 
     if (parseInt(otp) === parseInt(SaveOTP)) {
       setCurrentPage(3);
-      setError("");
     } else {
-      setError("Invalid OTP. Please try again.");
+      toast.error("Invalid OTP. Please try again.");
     }
   };
 
@@ -70,18 +69,17 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!password || !confirmPassword) {
-      setError("Please fill all the fields");
+      toast.error("Please fill all the fields");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
 
       await clientServer.post("/users/forgotpassword", {
         email,
@@ -89,13 +87,13 @@ const ForgotPassword = () => {
       });
 
       // Show success message before redirecting
-      setError("");
+      toast.success("Password reset successful!");
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     } catch (error) {
       console.error("Error resetting password:", error);
-      setError("Failed to reset password. Please try again.");
+      toast.error("Failed to reset password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,8 +116,6 @@ const ForgotPassword = () => {
               Follow the steps below to reset your password
             </p>
           </div>
-
-          {error && <div className="error-message">{error}</div>}
 
           {currentPage === 1 && (
             <form onSubmit={handleEmailSubmit} className="reset-form">
