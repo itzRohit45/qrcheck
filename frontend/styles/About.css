@@ -12,56 +12,32 @@
   display: block;
 }
 
-.slide span {
+.tutorial-card {
   width: 100%;
-  height: 98.5%;
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  background: rgba(0, 0, 0, 0.7);
+  height: 350px;
+  background-color: #1f2438;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-radius: 5px;
-}
-
-.slide span li {
-  list-style-type: none;
-  padding: 10px;
-}
-
-.slide span h1 {
-  font-size: 1.5em;
+  padding: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  color: white;
   text-align: center;
-  padding: 10px;
 }
 
-.slide span p {
-  font-size: 1em;
-  text-align: center;
-  padding: 10px;
+.tutorial-card h3 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  color: #3b82f6;
 }
 
-/* animation for span to slide up and slide down*/
-.slide span {
-  animation: slide-up 0.5s ease;
-}
-
-@keyframes slide-up {
-  0% {
-    height: 0;
-  }
-  100% {
-    height: 95%;
-  }
-}
-
-.slide img {
-  width: 100%;
-  border-radius: 5px;
-  border: 1px solid black;
+.tutorial-card p {
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: #eaeaea;
 }
 
 .navigation-bottom {
@@ -119,14 +95,18 @@
     margin-top: -20px;
   }
 
-  .slide span h3 {
-    font-size: 1.1em;
-    padding: 5px;
+  .tutorial-card {
+    height: 300px;
+    padding: 20px;
   }
 
-  .slide span p {
-    font-size: 0.85em;
-    padding: 5px;
+  .tutorial-card h3 {
+    font-size: 1.4em;
+    margin-bottom: 15px;
+  }
+
+  .tutorial-card p {
+    font-size: 0.95em;
   }
 
   .skipbtn {

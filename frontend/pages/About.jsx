@@ -1,108 +1,40 @@
 import React, { useState } from "react";
 import "../styles/About.css";
-import signup from "../assets/Signup.png";
-import login from "../assets/Login.png";
-import createclass from "../assets/createclass.png";
-import teacherd from "../assets/Teacher Dashboard.png";
-import newSession from "../assets/New Session.jpeg";
-import qr from "../assets/QR.jpeg";
-import AfterSession from "../assets/After Session.jpeg";
-import CourseDetails from "../assets/CourseDetails.jpeg";
-import studentd from "../assets/student dashboard.png";
-import joinclass from "../assets/joinclass.png";
-import StudentCourseDetails from "../assets/StudentCourseDetails.jpeg";
-import QrScanner from "../assets/Qr Scanner.jpeg";
-import forgorPW from "../assets/Forgot pw.png";
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
-const assets = [
+const tutorialSteps = [
   {
-    image_url: signup,
-    title: "User Registration",
-    caption:
-      "New users can register as a teacher or student. An OTP is sent to their registered email for verification before allowing password setup.",
+    title: "1. Register & Login",
+    content: "New users can securely register as a teacher or student. An OTP is sent to your registered email for verification before allowing password setup. Once registered, log in to access your dashboard.",
   },
   {
-    image_url: login,
-    title: "Secure Login",
-    caption:
-      "Users authenticate using their email and password. Upon successful login, a JSON Web Token (JWT) is generated for secure access.",
+    title: "2. Setting up Face ID",
+    content: "After logging in as a student, the system will guide you through a one-time process of capturing your face from multiple angles to create a secure biometric profile.",
   },
   {
-    image_url: teacherd,
-    title: "Teacher Dashboard Overview",
-    caption:
-      "Teachers can view all previously created attendance Classes and have quick access to Class details or initiate new Classes.",
+    title: "3. Creating & Joining Classes",
+    content: "Teachers can create new classes and generate a unique invite code. Students can use this code to join the class directly from their dashboard.",
   },
   {
-    image_url: createclass,
-    title: "Class Creation",
-    caption:
-      "Teachers can create new classes by entering details like course name, course code, and an invitation code for student access.",
+    title: "4. Creating an Attendance Session",
+    content: "Teachers can initiate a new attendance session for their class. This generates a secure, continuously rotating QR code that is displayed on the screen.",
   },
   {
-    image_url: CourseDetails,
-    title: "Class Details View",
-    caption:
-      "Teachers can view a list of enrolled students and the sessions created under each class. Teachers can also reset student devices.",
+    title: "5. Scanning & Verifying",
+    content: "Students use the app to scan the session's QR code. Once the QR code is validated, the app uses Face Recognition to securely verify the student's identity before marking them present.",
   },
   {
-    image_url: newSession,
-    title: "Initiate New Attendance Session",
-    caption:
-      "Teachers can set up a new session by specifying location, date, time, and expiration.",
-  },
-  {
-    image_url: qr,
-    title: "Session QR Code",
-    caption:
-      "A unique, continuously rotating QR code is generated for each session, preventing students from taking pictures of it.",
-  },
-  {
-    image_url: AfterSession,
-    title: "Post-Session Overview",
-    caption:
-      "Teachers can review attendance, see which students were marked present, and manually adjust status if necessary.",
-  },
-  {
-    image_url: studentd,
-    title: "Student Dashboard & Face ID",
-    caption:
-      "Students can view their classes, join new ones, and setup their Face ID profile for biometric verification.",
-  },
-  {
-    image_url: joinclass,
-    title: "Join a Class",
-    caption:
-      "Students join a class using the course name and invitation code shared by their teacher.",
-  },
-  {
-    image_url: StudentCourseDetails,
-    title: "Course Interaction",
-    caption:
-      "Students can view session details and participate by submitting attendance via QR scan.",
-  },
-  {
-    image_url: QrScanner,
-    title: "QR & Face Recognition",
-    caption:
-      "Students scan the QR code. The system validates the session and then uses Face Recognition to verify the student's identity before marking attendance.",
-  },
-  {
-    image_url: forgorPW,
-    title: "Password Recovery",
-    caption:
-      "Users can reset forgotten passwords via OTP-based email verification followed by setting a new password.",
+    title: "6. Managing Attendance",
+    content: "Teachers have access to a real-time post-session overview where they can review attendance records, reset locked student devices, and make manual adjustments if necessary.",
   },
 ];
 
 const About = ({ toggleDone }) => {
   const [active, setActive] = useState(0);
-  const [showContent, setShowContent] = useState(false);
 
   const onNext = () => {
-    if (active < assets.length - 1) {
+    if (active < tutorialSteps.length - 1) {
       setActive(active + 1);
     } else {
       toggleDone();
@@ -115,29 +47,13 @@ const About = ({ toggleDone }) => {
     }
   };
 
-  const Slide = ({ image_url, title, caption, active }) => {
+  const Slide = ({ title, content, active }) => {
     return (
       <div className={`slide ${active ? "active" : ""}`}>
-        <img
-          src={image_url}
-          alt={caption}
-          onMouseEnter={() => setShowContent(true)}
-          onMouseLeave={() => setShowContent(false)}
-        />
-        {showContent && (
-          <span
-            onMouseEnter={() => setShowContent(true)}
-            onMouseLeave={() => setShowContent(false)}
-            className="caption"
-          >
-            <ul>
-              <h3>{title}</h3>
-              <li>
-                <p>{caption}</p>
-              </li>
-            </ul>
-          </span>
-        )}
+        <div className="tutorial-card">
+          <h3>{title}</h3>
+          <p>{content}</p>
+        </div>
       </div>
     );
   };
@@ -146,18 +62,17 @@ const About = ({ toggleDone }) => {
     <div className="slider">
       <h2 style={{ textAlign: "center" }}>Tutorial</h2>
       <div className="slides">
-        {assets.map((e, i) => (
-          <Slide key={e.caption} {...e} active={i === active} />
+        {tutorialSteps.map((step, i) => (
+          <Slide key={step.title} {...step} active={i === active} />
         ))}
       </div>
       <div className="navigation">
         <div className="navigation-bottom">
-          {assets.map((e, i) => (
+          {tutorialSteps.map((step, i) => (
             <button
               className={`preview ${i === active ? "active" : ""}`}
-              key={e.caption}
-              onMouseEnter={() => setActive(i)}
-              onMouseLeave={() => setActive(active)}
+              key={step.title}
+              onClick={() => setActive(i)}
               style={{ width: "1px" }}
             />
           ))}
