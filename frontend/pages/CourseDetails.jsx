@@ -361,7 +361,7 @@ const CourseDetails = () => {
       {/* Attendance Modal */}
       {showAttendanceModal && (
         <div className={styles.modal}>
-          <div className={styles["modal-content"]}>
+          <div className={`${styles["modal-content"]} ${styles["modal-large"]}`}>
             <h2>Attendance Details</h2>
 
             {attendanceData.length > 0 ? (

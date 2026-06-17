@@ -123,7 +123,7 @@ export const getClassStudents = async (req, res) => {
 export const getStudentClasses = async (req, res) => {
   try {
     const { studentId } = req.params;
-    const enrolledClasses = await Course.find({ students: studentId });
+    const enrolledClasses = await Course.find({ students: studentId }).populate("teacherId", "name email");
 
     res.status(200).json(enrolledClasses);
   } catch (error) {

@@ -203,15 +203,6 @@ const TeacherDashboard = () => {
                     </div>
                   </div>
                 ))}
-                <div
-                  className={`${styles["class-card"]} ${styles["add-class-card"]}`}
-                  onClick={() => setShowClassModal(true)}
-                >
-                  <div className={styles["add-class-content"]}>
-                    <div className={styles["add-icon"]}>+</div>
-                    <p>Create New Class</p>
-                  </div>
-                </div>
               </div>
             ) : (
               renderEmptyState()

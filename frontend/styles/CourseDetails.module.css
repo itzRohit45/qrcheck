@@ -361,6 +361,10 @@
   box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
 }
 
+.modal-large {
+  max-width: 750px;
+}
+
 .modal-content h2 {
   margin: 0 0 16px 0;
   font-size: 24px;

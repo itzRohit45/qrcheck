@@ -156,7 +156,6 @@ const StudentCoursePage = () => {
                 <table className={styles["data-table"]}>
                   <thead>
                     <tr>
-                      <th>Date</th>
                       <th>Expires At</th>
                       <th>Status</th>
                       <th>Action</th>
@@ -172,7 +171,6 @@ const StudentCoursePage = () => {
 
                       return (
                         <tr key={session._id}>
-                          <td>{new Date(session.date).toLocaleString()}</td>
                           <td>
                             {new Date(session.expiresAt).toLocaleString()}
                           </td>

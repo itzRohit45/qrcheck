@@ -143,34 +143,15 @@
 .table-container {
   background-color: #1f2438;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
 }
 
 .data-table {
-  width: 95%;
+  width: 100%;
   border-collapse: collapse;
   text-align: left;
-  table-layout: fixed;
-}
-
-.data-table th:nth-child(1), .data-table td:nth-child(1) {
-  width: 40%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.data-table th:nth-child(2), .data-table td:nth-child(2) {
-  width: 30%;
-}
-
-.data-table th:nth-child(3), .data-table td:nth-child(3) {
-  width: 30%;
-  text-align: center;
 }
 
 .data-table th {
