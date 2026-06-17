@@ -13,8 +13,8 @@ import joinclass from "../assets/joinclass.png";
 import StudentCourseDetails from "../assets/StudentCourseDetails.jpeg";
 import QrScanner from "../assets/Qr Scanner.jpeg";
 import forgorPW from "../assets/Forgot pw.png";
-import next from "../assets/next.png";
-import prev from "../assets/previous.png";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
 const assets = [
   {
@@ -45,31 +45,31 @@ const assets = [
     image_url: CourseDetails,
     title: "Class Details View",
     caption:
-      "Teachers can view a list of enrolled students and the sessions created under each class.",
+      "Teachers can view a list of enrolled students and the sessions created under each class. Teachers can also reset student devices.",
   },
   {
     image_url: newSession,
     title: "Initiate New Attendance Session",
     caption:
-      "Teachers can set up a new session by specifying location, date, time, and the maximum distance allowed for students to mark attendance.",
+      "Teachers can set up a new session by specifying location, date, time, and expiration.",
   },
   {
     image_url: qr,
     title: "Session QR Code",
     caption:
-      "A unique QR code is generated for each session, which students scan to register their attendance.",
+      "A unique, continuously rotating QR code is generated for each session, preventing students from taking pictures of it.",
   },
   {
     image_url: AfterSession,
     title: "Post-Session Overview",
     caption:
-      "Teachers can review attendance, see which students were marked present, and make adjustments if necessary.",
+      "Teachers can review attendance, see which students were marked present, and manually adjust status if necessary.",
   },
   {
     image_url: studentd,
-    title: "Student Dashboard",
+    title: "Student Dashboard & Face ID",
     caption:
-      "Students can view all classes they’ve joined and navigate to sessions for attendance.",
+      "Students can view their classes, join new ones, and setup their Face ID profile for biometric verification.",
   },
   {
     image_url: joinclass,
@@ -85,9 +85,9 @@ const assets = [
   },
   {
     image_url: QrScanner,
-    title: "QR Code Attendance Scanner",
+    title: "QR & Face Recognition",
     caption:
-      "Students scan the QR code. The system validates attendance based on their proximity to the class location.",
+      "Students scan the QR code. The system validates the session and then uses Face Recognition to verify the student's identity before marking attendance.",
   },
   {
     image_url: forgorPW,
@@ -164,10 +164,10 @@ const About = ({ toggleDone }) => {
         </div>
         <div className="navigation-next-prev">
           <div className="next-prev prev" onClick={onPrev}>
-            <img src={prev} alt="<" />
+            <ArrowBackIosIcon style={{ color: 'white', fontSize: 32 }} />
           </div>
           <div className="next-prev next" onClick={onNext}>
-            <img src={next} alt=">" />
+            <ArrowForwardIosIcon style={{ color: 'white', fontSize: 32 }} />
           </div>
         </div>
       </div>
