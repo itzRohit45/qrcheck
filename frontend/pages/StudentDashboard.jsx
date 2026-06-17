@@ -156,9 +156,20 @@ const StudentDashboard = () => {
           <button
             onClick={() => setShowJoinModal(true)}
             className={styles["join-btn"]}
+            style={{ marginBottom: "10px", backgroundColor: "#00c853" }}
           >
             <span className={styles["btn-icon"]}>+</span>
             <span>Join Class</span>
+          </button>
+          <button
+            onClick={() => setShowFaceEnroll(true)}
+            className={styles["join-btn"]}
+            style={{ backgroundColor: faceEnrolled ? "#3b82f6" : "#ef4444" }}
+          >
+            <span className={styles["btn-icon"]}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5a2 2 0 0 1 2-2h2"></path><path d="M19 5a2 2 0 0 0-2-2h-2"></path><path d="M5 19a2 2 0 0 0 2 2h2"></path><path d="M19 19a2 2 0 0 1-2 2h-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M12 15h.01"></path></svg>
+            </span>
+            <span>{faceEnrolled ? "Update Face ID" : "Set up Face ID"}</span>
           </button>
         </div>
       </aside>
@@ -169,13 +180,6 @@ const StudentDashboard = () => {
             <p className={styles["welcome-text"]}>Welcome back, {userName}!</p>
             <h1 style={{ marginTop: "5px" }}>Your Classes</h1>
           </div>
-          <button
-            onClick={() => setShowFaceEnroll(true)}
-            className={styles["join-btn"]}
-            style={{ alignSelf: "center" }}
-          >
-            {faceEnrolled ? "Update Face ID" : "Set up Face ID"}
-          </button>
         </header>
 
         {!faceEnrolled && (
@@ -215,6 +219,9 @@ const StudentDashboard = () => {
                       <p className={styles["course-code"]}>
                         Code: {course.courseCode}
                       </p>
+                      <p style={{ margin: "5px 0", color: "#a0a3bd", fontSize: "0.85em" }}>
+                        Instructor: {course.teacherId?.name || "Unknown"}
+                      </p>
                       <div className={styles["course-details"]}></div>
                       <button className={styles["view-btn"]}>
                         View Details
@@ -222,15 +229,6 @@ const StudentDashboard = () => {
                     </div>
                   </div>
                 ))}
-                <div
-                  className={`${styles["course-card"]} ${styles["add-class-card"]}`}
-                  onClick={() => setShowJoinModal(true)}
-                >
-                  <div className={styles["add-class-content"]}>
-                    <div className={styles["add-icon"]}>+</div>
-                    <p>Join New Class</p>
-                  </div>
-                </div>
               </div>
             ) : (
               renderEmptyState()

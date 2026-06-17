@@ -6,6 +6,7 @@ import {
   runLiveness,
   captureSingleDescriptor,
 } from "../src/faceApi";
+import toast from "react-hot-toast";
 
 export default function QRScanner({ sessionId, onSuccess }) {
   const [step, setStep] = useState("scan"); // scan | face | result
@@ -33,6 +34,17 @@ export default function QRScanner({ sessionId, onSuccess }) {
 
     scanner.render(
       async (decodedText) => {
+        try {
+          const parsed = JSON.parse(decodedText);
+          if (parsed.sessionId !== sessionId) {
+            toast.error("Invalid QR Code: Does not match this session!");
+            return; // Don't stop the scanner, just ignore this scan
+          }
+        } catch (e) {
+          toast.error("Invalid QR format!");
+          return;
+        }
+
         qrDataRef.current = decodedText;
         try {
           await scanner.clear();

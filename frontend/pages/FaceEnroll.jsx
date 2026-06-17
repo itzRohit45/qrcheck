@@ -50,7 +50,14 @@ export default function FaceEnroll({ onDone, onCancel }) {
     if (!ready || busy) return;
     setBusy(true);
     try {
-      const descriptors = await captureDescriptors(videoRef.current, 5, setStatus);
+      const prompts = [
+        "Look Straight",
+        "Slightly Turn Left",
+        "Slightly Turn Right",
+        "Look Slightly Up",
+        "Look Slightly Down"
+      ];
+      const descriptors = await captureDescriptors(videoRef.current, 5, setStatus, prompts);
       if (descriptors.length < 3) {
         setStatus("Could not read your face clearly. Improve lighting and retry.");
         setBusy(false);
@@ -71,10 +78,26 @@ export default function FaceEnroll({ onDone, onCancel }) {
   return (
     <div style={{ textAlign: "center" }}>
       <h2>Set up Face ID</h2>
-      <p style={{ fontSize: "0.9em", color: "#555" }}>
-        We capture a few angles of your face. Turn your head slightly between
-        captures for best accuracy.
-      </p>
+      
+      {!busy && (
+        <div style={{ 
+          fontSize: "0.9em", 
+          color: "#ccc", 
+          backgroundColor: "rgba(255,255,255,0.05)", 
+          padding: "10px", 
+          borderRadius: "8px",
+          marginBottom: "15px",
+          textAlign: "left"
+        }}>
+          <strong>Tips for best accuracy:</strong>
+          <ul style={{ paddingLeft: "20px", marginTop: "5px", marginBottom: "0" }}>
+            <li>Ensure you have good lighting on your face</li>
+            <li>Take off glasses or masks if possible</li>
+            <li>Follow the on-screen prompts during capture</li>
+          </ul>
+        </div>
+      )}
+      
       <video
         ref={videoRef}
         autoPlay

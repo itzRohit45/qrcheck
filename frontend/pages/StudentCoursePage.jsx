@@ -188,7 +188,15 @@ const StudentCoursePage = () => {
                             </span>
                           </td>
                           <td>
-                            {sessionActive ? (
+                            {attendanceStatus === "Present" ? (
+                              <button
+                                className={`${styles["action-btn"]} ${styles["inactive-btn"]}`}
+                                disabled
+                                style={{ backgroundColor: "#2e7d32" }}
+                              >
+                                Marked
+                              </button>
+                            ) : sessionActive ? (
                               <button
                                 className={styles["action-btn"]}
                                 onClick={() => {

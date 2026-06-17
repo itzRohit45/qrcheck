@@ -228,6 +228,13 @@
 }
 
 /* Action Button */
+.action-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .action-btn {
   background-color: #3b82f6;
   color: white;

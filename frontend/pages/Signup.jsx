@@ -43,7 +43,31 @@ const Signup = () => {
 
         try {
           await clientServer.post("/users/signup", formData);
-          navigate("/login");
+          
+          // Auto login after successful signup
+          const loginRes = await clientServer.post("/users/login", {
+            email,
+            password,
+            type: userType
+          });
+          
+          if (loginRes.data.token) {
+            localStorage.setItem("token", loginRes.data.token);
+            localStorage.setItem("email", email);
+            localStorage.setItem("type", userType);
+            localStorage.setItem("id", loginRes.data.user._id);
+            setToken(loginRes.data.token);
+            toast.success("Account created and logged in!");
+            
+            // Redirect based on user type
+            if (userType === "student") {
+              navigate("/student-dashboard");
+            } else {
+              navigate("/teacher-dashboard");
+            }
+          } else {
+            navigate("/login");
+          }
         } catch (err) {
           console.log(err);
         }

@@ -283,12 +283,26 @@ const CourseDetails = () => {
                           <td>{new Date(session.expiresAt).toLocaleString()}</td>
                           <td>{session.duration}</td>
                           <td>
-                            <button
-                              className={styles["action-btn"]}
-                              onClick={() => handleCheckAttendance(session)}
-                            >
-                              View
-                            </button>
+                            <div className={styles["action-group"]}>
+                              <button
+                                className={styles["action-btn"]}
+                                onClick={() => handleCheckAttendance(session)}
+                              >
+                                View
+                              </button>
+                              {new Date(session.expiresAt) > new Date() && (
+                                <button
+                                  className={styles["action-btn"]}
+                                  onClick={() => {
+                                    setSessionId(session._id);
+                                    setShowQR(true);
+                                  }}
+                                  style={{ backgroundColor: "#00c853" }}
+                                >
+                                  Reopen QR
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -376,21 +390,23 @@ const CourseDetails = () => {
                           </span>
                         </td>
                         <td>
-                          <button
-                            className={styles["action-btn"]}
-                            onClick={() => {
-                              setSelectedStudent(att.studentId);
-                              setShowUpdateAttendanceModal(true);
-                            }}
-                          >
-                            Update
-                          </button>
-                          <button
-                            className={styles["action-btn"]}
-                            onClick={() => handleResetDevice(att.studentId._id)}
-                          >
-                            Reset Device
-                          </button>
+                          <div className={styles["action-group"]}>
+                            <button
+                              className={styles["action-btn"]}
+                              onClick={() => {
+                                setSelectedStudent(att.studentId);
+                                setShowUpdateAttendanceModal(true);
+                              }}
+                            >
+                              Update
+                            </button>
+                            <button
+                              className={styles["action-btn"]}
+                              onClick={() => handleResetDevice(att.studentId._id)}
+                            >
+                              Reset Device
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

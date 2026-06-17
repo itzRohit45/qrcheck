@@ -83,10 +83,12 @@ export async function runLiveness(video, onStatus, opts = {}) {
 }
 
 // Average several descriptors for a more stable enrollment reference.
-export async function captureDescriptors(video, count, onStatus) {
+export async function captureDescriptors(video, count, onStatus, prompts = null) {
   const descriptors = [];
   for (let i = 0; i < count; i++) {
-    onStatus && onStatus(`Capturing ${i + 1} of ${count}...`);
+    const defaultPrompt = `Capturing ${i + 1} of ${count}...`;
+    const promptText = prompts && prompts[i] ? `${prompts[i]} (${i + 1}/${count})` : defaultPrompt;
+    onStatus && onStatus(promptText);
     // Give React time to update the UI before running heavy face detection
     await new Promise((r) => setTimeout(r, 100));
     let det = null;
