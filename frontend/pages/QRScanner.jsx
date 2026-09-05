@@ -21,8 +21,23 @@ export default function QRScanner({ sessionId, onSuccess }) {
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
       {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          return {
+            width: Math.floor(minEdge * 0.9),
+            height: Math.floor(minEdge * 0.9),
+          };
+        },
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+        },
+        showZoomSliderIfSupported: true,
+        defaultZoomValueIfSupported: 1,
+        showTorchButtonIfSupported: true,
+        useBarCodeDetectorIfSupported: true,
         rememberLastUsedCamera: true,
         supportedScanTypes: [0],
       },
@@ -31,14 +46,18 @@ export default function QRScanner({ sessionId, onSuccess }) {
 
     scanner.render(
       async (decodedText) => {
+        let scannedSessionId = null;
         try {
           const parsed = JSON.parse(decodedText);
-          if (parsed.sessionId !== sessionId) {
-            toast.error("Invalid QR Code: Does not match this session!");
-            return;
-          }
+          scannedSessionId = parsed.sessionId || parsed.s;
         } catch {
-          toast.error("Invalid QR format!");
+          if (decodedText.includes(":")) {
+            scannedSessionId = decodedText.split(":")[0];
+          }
+        }
+
+        if (!scannedSessionId || scannedSessionId !== sessionId) {
+          toast.error("Invalid QR Code: Does not match this session!");
           return;
         }
 

@@ -4,7 +4,7 @@ import { Session } from "../model/Session.js";
 import { Course } from "../model/Course.js";
 import { Student } from "../model/Student.js";
 
-const generateNonce = () => crypto.randomBytes(16).toString("hex");
+const generateNonce = () => crypto.randomBytes(8).toString("hex");
 
 const buildQrPayload = (sessionId, nonce) =>
   JSON.stringify({ sessionId: sessionId.toString(), nonce });
@@ -196,10 +196,31 @@ export const markAttendance = async (req, res) => {
     }
 
     // Layer 1: QR payload + nonce must match what the server currently issues
-    let qrData;
-    try {
-      qrData = JSON.parse(scannedQRData);
-    } catch {
+    // Supports compact delimiter string (sessionId:nonce:index), compact JSON, and full JSON
+    let qrData = null;
+    if (typeof scannedQRData === "string" && scannedQRData.includes(":") && !scannedQRData.startsWith("{")) {
+      const parts = scannedQRData.split(":");
+      if (parts.length >= 3) {
+        qrData = {
+          sessionId: parts[0],
+          nonce: parts[1],
+          index: parseInt(parts[2], 10),
+        };
+      }
+    }
+
+    if (!qrData) {
+      try {
+        qrData = JSON.parse(scannedQRData);
+        if (qrData.s) qrData.sessionId = qrData.s;
+        if (qrData.n) qrData.nonce = qrData.n;
+        if (typeof qrData.i === "number") qrData.index = qrData.i;
+      } catch {
+        return res.status(400).json({ error: "Invalid QR Code format!" });
+      }
+    }
+
+    if (!qrData || !qrData.sessionId) {
       return res.status(400).json({ error: "Invalid QR Code!" });
     }
 

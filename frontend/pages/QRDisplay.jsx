@@ -12,15 +12,42 @@ export default function QRDisplay({ sessionId }) {
 
   const intervalSeconds = tokensData?.rotationInterval || 5;
 
-  // Handle Escape key to exit fullscreen projector mode
+  const enterFullscreen = () => {
+    setIsFullscreen(true);
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch {}
+  };
+
+  const exitFullscreen = () => {
+    setIsFullscreen(false);
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {}
+  };
+
+  // Handle Escape key and native fullscreen changes
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
+        exitFullscreen();
+      }
+    };
+    const onFsChange = () => {
+      if (!document.fullscreenElement) {
         setIsFullscreen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("fullscreenchange", onFsChange);
+    };
   }, []);
 
   // 1. Fetch the pre-generated token pool once on mount
@@ -126,11 +153,8 @@ export default function QRDisplay({ sessionId }) {
   const safeSlot = pool.length > 0 ? currentSlot % pool.length : 0;
   const currentNonce = pool[safeSlot];
 
-  const qrPayload = JSON.stringify({
-    sessionId,
-    nonce: currentNonce,
-    index: safeSlot,
-  });
+  // Compact delimiter payload (sessionId:nonce:index) produces a low-density Version 2-3 matrix with 2.5x larger blocks
+  const qrPayload = `${sessionId}:${currentNonce}:${safeSlot}`;
 
   const progressPercent = ((intervalSeconds - secondsLeft + 1) / intervalSeconds) * 100;
 
@@ -216,7 +240,7 @@ export default function QRDisplay({ sessionId }) {
 
       {/* Projector Fullscreen Mode Button for Large Auditoriums */}
       <button
-        onClick={() => setIsFullscreen(true)}
+        onClick={enterFullscreen}
         style={{
           marginTop: "6px",
           display: "inline-flex",
@@ -262,7 +286,7 @@ export default function QRDisplay({ sessionId }) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "24px",
+            padding: "16px 24px",
             boxSizing: "border-box",
           }}
         >
@@ -270,15 +294,16 @@ export default function QRDisplay({ sessionId }) {
           <div
             style={{
               position: "absolute",
-              top: "24px",
-              left: "32px",
-              right: "32px",
+              top: "16px",
+              left: "24px",
+              right: "24px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              zIndex: 10,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span
                 style={{
                   width: "10px",
@@ -289,50 +314,55 @@ export default function QRDisplay({ sessionId }) {
                 }}
               ></span>
               <span style={{ color: "#f8fafc", fontSize: "16px", fontWeight: 700 }}>
-                Live Attendance Stream
+                Live Classroom Attendance Stream
               </span>
             </div>
 
             <button
-              onClick={() => setIsFullscreen(false)}
+              onClick={exitFullscreen}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
                 padding: "8px 18px",
-                background: "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
+                background: "rgba(255, 255, 255, 0.12)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
                 borderRadius: "8px",
                 color: "#f8fafc",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: "600",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.18)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.22)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)")}
             >
               Exit Fullscreen (Esc)
             </button>
           </div>
 
-          {/* Giant High-Contrast QR Code for Projector Distance */}
+          {/* Giant High-Occupancy QR Code Container */}
           <div
             style={{
               background: "#ffffff",
-              padding: "28px",
+              padding: "clamp(16px, 2.5vh, 28px)",
               borderRadius: "24px",
-              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.8)",
+              boxShadow: "0 25px 70px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: "24px",
+              width: "min(78vh, 88vw)",
+              height: "min(78vh, 88vw)",
+              maxWidth: "850px",
+              maxHeight: "850px",
+              boxSizing: "border-box",
+              margin: "24px 0 12px 0",
             }}
           >
             {tokensData.tokenPool ? (
               <QRCodeSVG
                 value={qrPayload}
-                size={Math.min(window.innerWidth * 0.75, window.innerHeight * 0.58, 480)}
+                style={{ width: "100%", height: "100%", display: "block" }}
                 level="L"
                 includeMargin={false}
                 bgColor="#ffffff"
@@ -343,8 +373,9 @@ export default function QRDisplay({ sessionId }) {
                 src={tokensData.fallbackImage}
                 alt="QR Code"
                 style={{
-                  width: `${Math.min(window.innerWidth * 0.75, window.innerHeight * 0.58, 480)}px`,
-                  height: `${Math.min(window.innerWidth * 0.75, window.innerHeight * 0.58, 480)}px`,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
                   display: "block",
                 }}
               />
@@ -353,28 +384,37 @@ export default function QRDisplay({ sessionId }) {
 
           {/* Countdown & Status */}
           {tokensData.tokenPool && (
-            <div style={{ width: "100%", maxWidth: "480px", marginBottom: "16px" }}>
+            <div style={{ width: "100%", maxWidth: "min(78vh, 88vw)", marginBottom: "8px" }}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  fontSize: "14px",
+                  fontSize: "13.5px",
                   color: "#94a3b8",
-                  marginBottom: "8px",
+                  marginBottom: "6px",
                 }}
               >
-                <span>Anti-proxy dynamic QR</span>
-                <span style={{ fontWeight: 700, color: "#38bdf8", fontSize: "15px" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#38bdf8",
+                    boxShadow: "0 0 6px #38bdf8"
+                  }}></span>
+                  High-Range Projector Mode
+                </span>
+                <span style={{ fontWeight: 700, color: "#38bdf8", fontSize: "14px" }}>
                   Refreshes in {secondsLeft}s
                 </span>
               </div>
 
               <div
                 style={{
-                  height: "8px",
+                  height: "6px",
                   background: "rgba(255, 255, 255, 0.12)",
-                  borderRadius: "4px",
+                  borderRadius: "3px",
                   overflow: "hidden",
                 }}
               >
@@ -383,7 +423,7 @@ export default function QRDisplay({ sessionId }) {
                     height: "100%",
                     width: `${progressPercent}%`,
                     background: "linear-gradient(90deg, #3b82f6, #38bdf8)",
-                    borderRadius: "4px",
+                    borderRadius: "3px",
                     transition: "width 1s linear",
                   }}
                 ></div>
@@ -391,7 +431,7 @@ export default function QRDisplay({ sessionId }) {
             </div>
           )}
 
-          <p style={{ margin: 0, fontSize: "15px", color: "#cbd5e1" }}>
+          <p style={{ margin: "2px 0 0 0", fontSize: "14px", color: "#94a3b8" }}>
             Point your smartphone camera at the screen to mark your attendance
           </p>
         </div>
