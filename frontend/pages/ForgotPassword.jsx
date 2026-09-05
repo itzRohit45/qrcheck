@@ -43,7 +43,7 @@ const ForgotPassword = () => {
       setOtp(response.data.otp);
       setCurrentPage(2);
       if (response.data.fallback) {
-        toast(`Verification OTP: ${response.data.otp}`, { icon: "🔑", duration: 10000 });
+        toast(`Verification OTP: ${response.data.otp}`, { duration: 10000 });
       } else {
         toast.success("OTP sent successfully!");
       }

@@ -45,8 +45,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose
   .connect(MONGODB_URI, {})
-  .then(() => console.log("✅ Database Connected"))
-  .catch((err) => console.error("❌ Database Connection Error:", err));
+  .then(() => console.log("Database Connected"))
+  .catch((err) => console.error("Database Connection Error:", err));
 
 // Routes
 app.get("/", (req, res) => res.send("Server is running..."));
@@ -57,19 +57,19 @@ app.use("/courses", courseRoutes);
 
 // WebSocket for real-time QR updates
 io.on("connection", (socket) => {
-  console.log("🔗 Client connected:", socket.id);
+  console.log("Client connected:", socket.id);
 
   socket.on("joinSession", (sessionId) => {
     socket.join(sessionId);
-    console.log(`📌 Client joined session: ${sessionId}`);
+    console.log(`Client joined session: ${sessionId}`);
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
+    console.log("Client disconnected:", socket.id);
   });
 });
 
-// ✅ Rotate QR codes every 15 seconds (outside io.on("connection"))
+// Rotate QR codes every 15 seconds (outside io.on("connection"))
 setInterval(async () => {
   const updatedSessions = await updateQRCode();
   updatedSessions.forEach(({ sessionId, newQRCode }) => {
@@ -77,4 +77,4 @@ setInterval(async () => {
   });
 }, 15000);
 
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -99,7 +99,7 @@ const Signup = () => {
       setOtp(res.data.otp);
       
       if (res.data.fallback) {
-        toast(`Verification OTP: ${res.data.otp}`, { icon: "🔑", duration: 10000 });
+        toast(`Verification OTP: ${res.data.otp}`, { duration: 10000 });
       } else {
         toast.success(res.data.message || "OTP sent successfully!");
       }

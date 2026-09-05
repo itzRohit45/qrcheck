@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 async function Login(req, res) {
   const { email, password } = req.body;
 
-  // 🛑 Validate inputs
+  // Validate inputs
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
   }
@@ -65,7 +65,7 @@ async function Login(req, res) {
 async function Signup(req, res) {
   const { name, email, rollNo, dob, branch, dept, password, type } = req.body;
 
-  // 🛑 Validate required inputs
+  // Validate required inputs
   if (!email || !password || !type) {
     return res
       .status(400)
@@ -121,15 +121,15 @@ async function Signup(req, res) {
         .json({ message: "Teacher registered successfully", user: newUser });
     }
 
-    // 🛑 Invalid type
+    // Invalid type
     return res.status(400).json({
       message: "Invalid user type. Must be either student or teacher.",
     });
   } catch (err) {
-    console.error("Signup error:", err); // 👀 Logs the actual error in Render
+    console.error("Signup error:", err);
     res.status(500).json({
       message: "An error occurred during signup. Please try again.",
-      error: err.message, // 👈 Optional, remove in production
+      error: err.message,
     });
   }
 }
@@ -209,7 +209,7 @@ The Support Team`;
     return res.status(400).json({ message: "Invalid email type." });
   }
 
-  console.log(`[SendMail] Calling Mailer.sendMail (Nodemailer) for: ${email}`);
+  console.log(`[SendMail] Calling Mailer.sendMail for: ${email}`);
   const result = await Mailer.sendMail(email, subject, text);
 
   console.log("[SendMail] Mailer.sendMail returned result:", result.success);
@@ -231,7 +231,7 @@ The Support Team`;
 }
 
 async function GetUserDetails(req, res) {
-  const { email } = req.query; // ✅ Fetch email from query params
+  const { email } = req.query; // Fetch email from query params
 
   try {
     let type = "student";
