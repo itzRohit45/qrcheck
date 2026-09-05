@@ -4,8 +4,8 @@ import { Session } from "../model/Session.js";
 import { Course } from "../model/Course.js";
 import { Student } from "../model/Student.js";
 
-const GRACE_MS = 8000; // previousNonce stays valid this long after a rotation
-const FACE_MATCH_THRESHOLD = 0.5; // euclidean distance; lower = stricter
+const GRACE_MS = 90000; // 90s grace window so face verification has plenty of time
+const FACE_MATCH_THRESHOLD = 0.55; // standard euclidean distance for vladmandic/face-api
 
 const generateNonce = () => crypto.randomBytes(16).toString("hex");
 
@@ -67,6 +67,7 @@ export const createSession = async (req, res) => {
     const nonce = generateNonce();
     session.currentNonce = nonce;
     session.previousNonce = null;
+    session.recentNonces = [{ nonce, createdAt: new Date() }];
     session.nonceUpdatedAt = new Date();
     session.currentQRCode = await QRCode.toDataURL(
       buildQrPayload(session._id, nonce)
@@ -100,6 +101,15 @@ export async function updateQRCode() {
       session.previousNonce = session.currentNonce;
       session.currentNonce = nonce;
       session.nonceUpdatedAt = new Date();
+
+      // Maintain a 2-minute rolling window of valid nonces
+      const twoMinutesAgo = Date.now() - 120000;
+      const recent = (session.recentNonces || []).filter(
+        (n) => new Date(n.createdAt).getTime() > twoMinutesAgo
+      );
+      recent.push({ nonce, createdAt: new Date() });
+      session.recentNonces = recent;
+
       session.currentQRCode = await QRCode.toDataURL(
         buildQrPayload(session._id, nonce)
       );
@@ -177,14 +187,21 @@ export const markAttendance = async (req, res) => {
         .json({ error: "QR Code does not match this session!" });
     }
 
+    const now = Date.now();
     const matchesCurrent =
       qrData.nonce && qrData.nonce === session.currentNonce;
     const matchesPrevious =
       qrData.nonce &&
       qrData.nonce === session.previousNonce &&
-      Date.now() - new Date(session.nonceUpdatedAt).getTime() <= GRACE_MS;
+      now - new Date(session.nonceUpdatedAt).getTime() <= GRACE_MS;
+    const matchesRecent =
+      qrData.nonce &&
+      Array.isArray(session.recentNonces) &&
+      session.recentNonces.some(
+        (n) => n.nonce === qrData.nonce && now - new Date(n.createdAt).getTime() <= 120000
+      );
 
-    if (!matchesCurrent && !matchesPrevious) {
+    if (!matchesCurrent && !matchesPrevious && !matchesRecent) {
       return res
         .status(400)
         .json({ error: "QR Code expired. Scan the latest code on screen." });

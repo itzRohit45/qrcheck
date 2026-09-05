@@ -33,8 +33,8 @@ async function Login(req, res) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Layer 4: bump tokenVersion so any previously issued token is invalidated.
-    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    // Ensure a stable tokenVersion so existing active sessions (e.g. mobile & laptop) stay valid
+    user.tokenVersion = user.tokenVersion || 1;
     await user.save();
 
     const token = JWT.generateToken({

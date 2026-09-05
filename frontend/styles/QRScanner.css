@@ -268,29 +268,92 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.qr-retry-btn {
+.qr-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.qr-retry-face-btn {
   background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
   color: #ffffff;
   border: none;
-  padding: 11px 26px;
+  padding: 11px 24px;
   border-radius: 12px;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   outline: none;
 }
 
-.qr-retry-btn:hover {
+.qr-retry-face-btn:hover {
   background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
   box-shadow: 0 6px 22px rgba(59, 130, 246, 0.6);
   transform: translateY(-2px);
 }
 
-.qr-retry-btn:active {
+.qr-retry-face-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.qr-rescan-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  outline: none;
+}
+
+.qr-rescan-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.qr-rescan-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.qr-login-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  outline: none;
+}
+
+.qr-login-btn:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.6);
+  transform: translateY(-2px);
+}
+
+.qr-login-btn:active {
   transform: translateY(0) scale(0.98);
 }

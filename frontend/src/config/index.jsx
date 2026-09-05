@@ -19,6 +19,23 @@ function attachAuth(config) {
 clientServer.interceptors.request.use(attachAuth);
 axios.interceptors.request.use(attachAuth);
 
+// Handle 401 Unauthorized responses cleanly
+function handleAuthError(error) {
+  if (error.response && error.response.status === 401) {
+    const isAuthEndpoint =
+      error.config?.url?.includes("/signin") ||
+      error.config?.url?.includes("/login");
+    if (!isAuthEndpoint && localStorage.getItem("token")) {
+      console.warn("Session expired or token invalid.");
+      localStorage.removeItem("token");
+    }
+  }
+  return Promise.reject(error);
+}
+
+clientServer.interceptors.response.use((res) => res, handleAuthError);
+axios.interceptors.response.use((res) => res, handleAuthError);
+
 // Layer 3: a stable per-device id, created once and persisted in localStorage.
 export function getDeviceId() {
   let id = localStorage.getItem("deviceId");

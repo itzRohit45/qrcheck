@@ -9,6 +9,12 @@ const sessionSchema = new Schema(
     currentQRCode: { type: String }, // Latest QR image (data URL) for display
     currentNonce: { type: String }, // Latest valid nonce embedded in the QR
     previousNonce: { type: String }, // Previous nonce, accepted during a short grace window
+    recentNonces: [
+      {
+        nonce: { type: String },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     nonceUpdatedAt: { type: Date, default: Date.now }, // When currentNonce was last rotated
     attendance: [
       {
