@@ -209,22 +209,35 @@ The Support Team`;
     return res.status(400).json({ message: "Invalid email type." });
   }
 
-  console.log("Preparing to call Mailer.sendMail with SendGrid...");
-  
-  // NOTE: If this hangs, it will never log the result!
+  console.log(`[SendMail] Calling Mailer.sendMail (Nodemailer) for: ${email}`);
   const result = await Mailer.sendMail(email, subject, text);
 
-  console.log("Mailer.sendMail returned result:", result.success);
+  console.log("[SendMail] Mailer.sendMail returned result:", result.success);
 
   if (result.success) {
-    console.log("Sending 200 response to client");
-    res.status(200).json({
+    console.log("[SendMail] Sending 200 response to client");
+    return res.status(200).json({
       message: "OTP sent successfully. Please check your email.",
       otp: otp,
     });
   } else {
-    console.error("Sending 500 response to client because Mailer failed");
-    res.status(500).json({ message: "Failed to send OTP. Please try again." });
+    // If running in development or PASSWORD is not yet set in .env:
+    if (process.env.NODE_ENV !== "production" || !process.env.PASSWORD) {
+      console.log("\n=======================================================");
+      console.log(`⚠️  [DEV MODE OTP FALLBACK]`);
+      console.log(`📧  Target Email: ${email}`);
+      console.log(`🔑  YOUR OTP CODE IS: ${otp}`);
+      console.log("=======================================================\n");
+      return res.status(200).json({
+        message: "OTP generated (Dev Mode). Please check your server console.",
+        otp: otp,
+      });
+    }
+
+    console.error("[SendMail] Sending 500 response because Mailer failed");
+    return res.status(500).json({
+      message: "Failed to send OTP. Please check your email credentials.",
+    });
   }
 }
 

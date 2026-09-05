@@ -1,7 +1,11 @@
 import axios from "axios";
 
-// Point this at your backend. For local testing use "http://localhost:5050".
-export const BASE_URL = "https://scanme-wkq3.onrender.com";
+// Auto-detect localhost for local development, or fallback to Render in production
+export const BASE_URL =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5050"
+    : "https://scanme-wkq3.onrender.com";
 
 export const clientServer = axios.create({
   baseURL: BASE_URL,
