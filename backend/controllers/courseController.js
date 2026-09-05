@@ -144,7 +144,7 @@ export const getCourseDetails = async (req, res) => {
         select: "date radius duration expiresAt attendance",
         populate: {
           path: "attendance.studentId",
-          select: "name rollNo", // Get student name & roll number for attendance
+          select: "name rollNo branch email deviceId",
         },
       });
 

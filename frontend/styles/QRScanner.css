@@ -15,24 +15,56 @@
 }
 
 .qr-scanner-header {
-  margin-bottom: 16px;
-}
-
-.qr-scanner-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 6px 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
 }
 
-.qr-scanner-subtitle {
-  font-size: 13px;
+.qr-scanner-header-main {
+  text-align: left;
+}
+
+.qr-scanner-close-icon {
+  background: transparent;
+  border: none;
   color: #94a3b8;
-  margin: 0;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.qr-scanner-close-icon:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qr-scanner-footer-bar {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.qr-scanner-cancel-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #cbd5e1;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 240px;
+}
+
+.qr-scanner-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
 }
 
 /* ==========================================================================
@@ -47,23 +79,29 @@
   font-family: inherit !important;
 }
 
-/* Scan Viewport Container */
+/* Scan Viewport Container - Compact on mobile to avoid overflow */
 #qr-reader__scan_region {
-  border-radius: 16px !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
-  background: #0b0f19 !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
-  min-height: 220px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  max-height: min(38vh, 270px) !important;
+  max-width: min(38vh, 270px) !important;
+  aspect-ratio: 1 / 1 !important;
+  margin: 0 auto !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
+  box-shadow: none !important;
 }
 
 /* Video inside scan region */
 #qr-reader__scan_region video {
-  border-radius: 14px !important;
+  border-radius: 10px !important;
   width: 100% !important;
+  height: 100% !important;
+  max-height: min(38vh, 270px) !important;
   object-fit: cover !important;
 }
 
@@ -71,35 +109,43 @@
 #qr-reader__scan_region img {
   filter: invert(0.85) hue-rotate(180deg) brightness(1.2) !important;
   opacity: 0.8 !important;
-  max-width: 60px !important;
-  margin: 24px auto 12px auto !important;
+  max-width: 50px !important;
+  margin: 16px auto 8px auto !important;
   display: block !important;
 }
 
 /* Dashboard & Sections */
 #qr-reader__dashboard {
   background: transparent !important;
-  padding: 14px 0 6px 0 !important;
+  padding: 8px 0 4px 0 !important;
 }
 
 #qr-reader__dashboard_section {
-  padding: 4px 0 !important;
+  padding: 2px 0 !important;
 }
 
 #qr-reader__dashboard_section_csr {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
 }
 
 /* Text & labels inside scanner */
 #qr-reader span,
 #qr-reader div,
 #qr-reader p {
-  color: #cbd5e1 !important;
+  color: #94a3b8 !important;
   font-family: inherit !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
+}
+
+/* Zoom range slider */
+#qr-reader input[type="range"] {
+  accent-color: #2563eb !important;
+  margin: 4px 0 !important;
+  width: 180px !important;
+  cursor: pointer;
 }
 
 /* Select Camera Dropdown */
@@ -108,18 +154,18 @@
   background: #141824 !important;
   color: #f1f5f9 !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  padding: 10px 16px !important;
-  border-radius: 10px !important;
-  font-size: 13.5px !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
   font-weight: 500 !important;
   outline: none !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
-  transition: all 0.25s ease !important;
-  max-width: 280px !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+  max-width: 260px !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  margin: 8px auto !important;
+  margin: 4px auto !important;
   display: block !important;
   text-align: center !important;
 }
@@ -130,12 +176,6 @@
   background: #181d2e !important;
 }
 
-#qr-reader select:focus,
-#html5-qrcode-select-camera:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
-}
-
 #qr-reader select option {
   background: #1f2438 !important;
   color: #ffffff !important;
@@ -143,67 +183,72 @@
 }
 
 /* ==========================================================================
-   Buttons inside #qr-reader
+   Buttons inside #qr-reader - Clean, non-glowing solid blue/green theme
    ========================================================================== */
 
 #qr-reader button {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  background: #2563eb !important;
   color: #ffffff !important;
-  border: none !important;
-  padding: 11px 24px !important;
-  border-radius: 12px !important;
-  font-size: 14.5px !important;
+  border: 1px solid #1d4ed8 !important;
+  padding: 8px 18px !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.2px !important;
+  letter-spacing: 0.1px !important;
   cursor: pointer !important;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  margin: 8px 4px !important;
+  box-shadow: none !important;
+  transition: background 0.2s ease !important;
+  margin: 4px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   outline: none !important;
   text-decoration: none !important;
+  transform: none !important;
 }
 
 #qr-reader button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
-  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.6) !important;
-  transform: translateY(-2px) !important;
+  background: #1d4ed8 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 #qr-reader button:active {
-  transform: translateY(0) scale(0.98) !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(0.98) !important;
 }
 
 /* Request Camera Permission Button */
 #html5-qrcode-button-camera-permission {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
-  padding: 12px 26px !important;
-  font-size: 15px !important;
+  background: #2563eb !important;
+  border-color: #1d4ed8 !important;
+  padding: 10px 22px !important;
+  font-size: 14px !important;
 }
 
-/* Start Scanning Button */
+/* Start Scanning Button - Clean Emerald Green */
 #html5-qrcode-button-camera-start {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4) !important;
+  background: #059669 !important;
+  border: 1px solid #047857 !important;
+  box-shadow: none !important;
 }
 
 #html5-qrcode-button-camera-start:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.6) !important;
+  background: #047857 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-/* Stop Scanning Button */
+/* Stop Scanning Button - Clean Crimson */
 #html5-qrcode-button-camera-stop {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4) !important;
+  background: #dc2626 !important;
+  border: 1px solid #b91c1c !important;
+  box-shadow: none !important;
 }
 
 #html5-qrcode-button-camera-stop:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-  box-shadow: 0 6px 22px rgba(239, 68, 68, 0.6) !important;
+  background: #b91c1c !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* Info link & Torch toggle */
@@ -292,16 +337,16 @@
 }
 
 .qr-login-btn {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: #2563eb;
   color: #ffffff;
   border: none;
   padding: 12px 28px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -309,8 +354,8 @@
 }
 
 .qr-login-btn:hover {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.6);
+  background: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
 }
 

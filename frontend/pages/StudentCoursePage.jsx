@@ -274,23 +274,16 @@ const StudentCoursePage = () => {
 
       {showQRScanner && (
         <div className={styles.modal}>
-          <div className={styles["modal-content"]}>
+          <div className={`${styles["modal-content"]} ${styles["modal-scanner"]}`}>
             <QRScanner 
               sessionId={sessionId} 
               studentId={studentId} 
+              onClose={() => setShowQRScanner(false)}
               onSuccess={() => {
                 setShowQRScanner(false);
                 fetchCourseDetails(); // Refresh the attendance list to show "Present"
               }}
             />
-            <div className={styles["modal-actions"]}>
-              <button
-                className={styles["cancel-btn"]}
-                onClick={() => setShowQRScanner(false)}
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

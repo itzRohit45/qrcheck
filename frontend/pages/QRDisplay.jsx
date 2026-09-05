@@ -212,7 +212,6 @@ export default function QRDisplay({ sessionId }) {
                 height: "8px",
                 borderRadius: "50%",
                 background: "#10b981",
-                boxShadow: "0 0 8px #10b981"
               }}></span>
               Rotating Live
             </span>
@@ -242,22 +241,28 @@ export default function QRDisplay({ sessionId }) {
       <button
         onClick={enterFullscreen}
         style={{
-          marginTop: "6px",
+          marginTop: "8px",
           display: "inline-flex",
           alignItems: "center",
           gap: "8px",
-          padding: "8px 16px",
-          background: "rgba(56, 189, 248, 0.1)",
-          border: "1px solid rgba(56, 189, 248, 0.28)",
+          padding: "8px 18px",
+          background: "#1e293b",
+          border: "1px solid #334155",
           borderRadius: "8px",
-          color: "#38bdf8",
+          color: "#f8fafc",
           fontSize: "13px",
           fontWeight: "600",
           cursor: "pointer",
-          transition: "all 0.2s ease",
+          transition: "background 0.2s ease, border-color 0.2s ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(56, 189, 248, 0.2)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(56, 189, 248, 0.1)")}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#2563eb";
+          e.currentTarget.style.borderColor = "#1d4ed8";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#1e293b";
+          e.currentTarget.style.borderColor = "#334155";
+        }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
@@ -310,10 +315,9 @@ export default function QRDisplay({ sessionId }) {
                   height: "10px",
                   borderRadius: "50%",
                   background: "#10b981",
-                  boxShadow: "0 0 10px #10b981",
                 }}
               ></span>
-              <span style={{ color: "#f8fafc", fontSize: "16px", fontWeight: 700 }}>
+              <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>
                 Live Classroom Attendance Stream
               </span>
             </div>
@@ -324,18 +328,18 @@ export default function QRDisplay({ sessionId }) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "8px 18px",
-                background: "rgba(255, 255, 255, 0.12)",
-                border: "1px solid rgba(255, 255, 255, 0.25)",
+                padding: "8px 16px",
+                background: "#1e293b",
+                border: "1px solid #334155",
                 borderRadius: "8px",
                 color: "#f8fafc",
                 fontSize: "13px",
                 fontWeight: "600",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
+                transition: "background 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.22)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#334155")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#1e293b")}
             >
               Exit Fullscreen (Esc)
             </button>
@@ -400,8 +404,7 @@ export default function QRDisplay({ sessionId }) {
                     width: "8px",
                     height: "8px",
                     borderRadius: "50%",
-                    background: "#38bdf8",
-                    boxShadow: "0 0 6px #38bdf8"
+                    background: "#2563eb",
                   }}></span>
                   High-Range Projector Mode
                 </span>

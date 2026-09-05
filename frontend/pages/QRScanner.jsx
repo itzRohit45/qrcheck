@@ -5,7 +5,7 @@ import { clientServer, getDeviceId } from "../src/config";
 import toast from "react-hot-toast";
 import "../styles/QRScanner.css";
 
-export default function QRScanner({ sessionId, onSuccess }) {
+export default function QRScanner({ sessionId, onSuccess, onClose }) {
   const [step, setStep] = useState("scan"); // "scan" | "submitting" | "result"
   const [message, setMessage] = useState("");
   const [isAuthError, setIsAuthError] = useState(false);
@@ -25,10 +25,11 @@ export default function QRScanner({ sessionId, onSuccess }) {
         qrbox: (viewfinderWidth, viewfinderHeight) => {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
           return {
-            width: Math.floor(minEdge * 0.9),
-            height: Math.floor(minEdge * 0.9),
+            width: Math.floor(minEdge * 0.85),
+            height: Math.floor(minEdge * 0.85),
           };
         },
+        aspectRatio: 1.0,
         videoConstraints: {
           facingMode: "environment",
           width: { ideal: 1920, min: 1280 },
@@ -130,18 +131,37 @@ export default function QRScanner({ sessionId, onSuccess }) {
       {step === "scan" && (
         <>
           <div className="qr-scanner-header">
-            <h2 className="qr-scanner-title">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-              Scan Session QR Code
-            </h2>
-            <p className="qr-scanner-subtitle">Align the rotating QR code displayed on the screen</p>
+            <div className="qr-scanner-header-main">
+              <h2 className="qr-scanner-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Scan Session QR Code
+              </h2>
+              <p className="qr-scanner-subtitle">Align the rotating QR code in camera</p>
+            </div>
+            {onClose && (
+              <button
+                type="button"
+                className="qr-scanner-close-icon"
+                onClick={onClose}
+                aria-label="Close Scanner"
+              >
+                &times;
+              </button>
+            )}
           </div>
           <div id="qr-reader" />
+          {onClose && (
+            <div className="qr-scanner-footer-bar">
+              <button type="button" className="qr-scanner-cancel-btn" onClick={onClose}>
+                Cancel
+              </button>
+            </div>
+          )}
         </>
       )}
 
