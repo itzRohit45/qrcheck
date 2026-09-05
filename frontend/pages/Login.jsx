@@ -31,10 +31,6 @@ const Login = () => {
         localStorage.setItem("type", type);
         localStorage.setItem("token", token);
         localStorage.setItem("id", user._id);
-        localStorage.setItem(
-          "faceEnrolled",
-          user.faceEnrolled ? "true" : "false"
-        );
 
         setToken(token);
         if (type === "student") {

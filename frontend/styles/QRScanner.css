@@ -221,22 +221,8 @@
 }
 
 /* ==========================================================================
-   Face verification step & Result step in QRScanner
+   Result step in QRScanner
    ========================================================================== */
-
-.qr-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 20px;
-  padding: 8px 18px;
-  margin-bottom: 16px;
-  color: #e2e8f0;
-  font-size: 14px;
-  font-weight: 500;
-}
 
 .qr-result-container {
   display: flex;
@@ -277,32 +263,6 @@
   width: 100%;
 }
 
-.qr-retry-face-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  color: #ffffff;
-  border: none;
-  padding: 11px 24px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  outline: none;
-}
-
-.qr-retry-face-btn:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.6);
-  transform: translateY(-2px);
-}
-
-.qr-retry-face-btn:active {
-  transform: translateY(0) scale(0.98);
-}
 
 .qr-rescan-btn {
   background: rgba(255, 255, 255, 0.08);

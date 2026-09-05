@@ -9,8 +9,8 @@ const tutorialSteps = [
     content: "New users can securely register as a teacher or student. An OTP is sent to your registered email for verification before allowing password setup. Once registered, log in to access your dashboard.",
   },
   {
-    title: "2. Setting up Face ID",
-    content: "After logging in as a student, the system will guide you through a one-time process of capturing your face from multiple angles to create a secure biometric profile.",
+    title: "2. Device Binding Security",
+    content: "To prevent attendance proxies and sharing, your student account automatically binds to your physical device upon your first attendance mark. Only your phone can submit your attendance.",
   },
   {
     title: "3. Creating & Joining Classes",
@@ -21,8 +21,8 @@ const tutorialSteps = [
     content: "Teachers can initiate a new attendance session for their class. This generates a secure, continuously rotating QR code that is displayed on the screen.",
   },
   {
-    title: "5. Scanning & Verifying",
-    content: "Students use the app to scan the session's QR code. Once the QR code is validated, the app uses Face Recognition to securely verify the student's identity before marking them present.",
+    title: "5. Scanning & Instant Attendance",
+    content: "Students use the app to scan the session's rotating QR code displayed on the screen. The code is instantly verified with zero latency, and attendance is marked immediately.",
   },
   {
     title: "6. Managing Attendance",

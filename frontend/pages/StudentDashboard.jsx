@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/StudentDashboard.module.css";
 import { clientServer } from "../src/config";
-import FaceEnroll from "./FaceEnroll";
 import toast from "react-hot-toast";
 
 const StudentDashboard = () => {
@@ -13,8 +12,6 @@ const StudentDashboard = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const [faceEnrolled, setFaceEnrolled] = useState(true);
-  const [showFaceEnroll, setShowFaceEnroll] = useState(false);
 
   const navigate = useNavigate();
 
@@ -35,10 +32,6 @@ const StudentDashboard = () => {
             "name",
             res.data.user.name || userEmail.split("@")[0]
           );
-          const enrolled = !!res.data.user.faceEnrolled;
-          setFaceEnrolled(enrolled);
-          localStorage.setItem("faceEnrolled", enrolled ? "true" : "false");
-          if (!enrolled) setShowFaceEnroll(true);
         }
       } catch (error) {
         console.error("Error fetching user details:", error);
@@ -156,20 +149,10 @@ const StudentDashboard = () => {
           <button
             onClick={() => setShowJoinModal(true)}
             className={styles["join-btn"]}
-            style={{ marginBottom: "10px", backgroundColor: "#00c853" }}
+            style={{ backgroundColor: "#00c853" }}
           >
             <span className={styles["btn-icon"]}>+</span>
             <span>Join Class</span>
-          </button>
-          <button
-            onClick={() => setShowFaceEnroll(true)}
-            className={styles["join-btn"]}
-            style={{ backgroundColor: faceEnrolled ? "#3b82f6" : "#ef4444" }}
-          >
-            <span className={styles["btn-icon"]}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5a2 2 0 0 1 2-2h2"></path><path d="M19 5a2 2 0 0 0-2-2h-2"></path><path d="M5 19a2 2 0 0 0 2 2h2"></path><path d="M19 19a2 2 0 0 1-2 2h-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M12 15h.01"></path></svg>
-            </span>
-            <span>{faceEnrolled ? "Update Face ID" : "Set up Face ID"}</span>
           </button>
         </div>
       </aside>
@@ -181,60 +164,6 @@ const StudentDashboard = () => {
             <h1 style={{ marginTop: "5px" }}>Your Classes</h1>
           </div>
         </header>
-
-        {!faceEnrolled && (
-          <div
-            style={{
-              margin: "16px 0",
-              padding: "14px 18px",
-              borderRadius: "12px",
-              background: "rgba(245, 158, 11, 0.12)",
-              color: "#fcd34d",
-              border: "1px solid rgba(245, 158, 11, 0.28)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <span style={{ fontSize: "14px", fontWeight: 500 }}>
-                You must set up Face ID before you can mark attendance.
-              </span>
-            </div>
-            <button
-              onClick={() => setShowFaceEnroll(true)}
-              style={{
-                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                color: "#ffffff",
-                border: "none",
-                padding: "8px 18px",
-                borderRadius: "8px",
-                fontWeight: 600,
-                fontSize: "13.5px",
-                cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(245, 158, 11, 0.3)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 14px rgba(245, 158, 11, 0.45)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 10px rgba(245, 158, 11, 0.3)";
-              }}
-            >
-              Set up now
-            </button>
-          </div>
-        )}
 
         {isLoading ? (
           <div className={styles["loading-container"]}>
@@ -275,20 +204,6 @@ const StudentDashboard = () => {
         )}
       </main>
 
-      {/* Face Enrollment Modal */}
-      {showFaceEnroll && (
-        <div className={styles.modal}>
-          <div className={styles["modal-content"]}>
-            <FaceEnroll
-              onDone={() => {
-                setFaceEnrolled(true);
-                setShowFaceEnroll(false);
-              }}
-              onCancel={() => setShowFaceEnroll(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Join Class Modal */}
       {showJoinModal && (

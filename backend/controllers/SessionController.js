@@ -4,33 +4,12 @@ import { Session } from "../model/Session.js";
 import { Course } from "../model/Course.js";
 import { Student } from "../model/Student.js";
 
-const GRACE_MS = 90000; // 90s grace window so face verification has plenty of time
-const FACE_MATCH_THRESHOLD = 0.55; // standard euclidean distance for vladmandic/face-api
+const GRACE_MS = 90000; // 90s grace window for token validation
 
 const generateNonce = () => crypto.randomBytes(16).toString("hex");
 
 const buildQrPayload = (sessionId, nonce) =>
   JSON.stringify({ sessionId: sessionId.toString(), nonce });
-
-const euclideanDistance = (a, b) => {
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) {
-    const d = a[i] - b[i];
-    sum += d * d;
-  }
-  return Math.sqrt(sum);
-};
-
-// Smallest distance between the live descriptor and any enrolled reference.
-const bestFaceDistance = (references, probe) => {
-  let best = Infinity;
-  for (const ref of references) {
-    if (!Array.isArray(ref) || ref.length !== probe.length) continue;
-    const d = euclideanDistance(ref, probe);
-    if (d < best) best = d;
-  }
-  return best;
-};
 
 export const createSession = async (req, res) => {
   try {
@@ -194,7 +173,7 @@ export const getCurrentQR = async (req, res) => {
 
 export const markAttendance = async (req, res) => {
   try {
-    const { sessionId, scannedQRData, deviceId, faceDescriptor } = req.body;
+    const { sessionId, scannedQRData, deviceId } = req.body;
     // Layer 4: the student is taken from the auth token, never trusted from the body.
     const studentId = req.user?.id;
 
@@ -295,30 +274,6 @@ export const markAttendance = async (req, res) => {
           "This account is locked to another device. Ask your teacher to reset your device.",
       });
     }
-
-    /*
-    ========================================================================================
-    [OPTIONAL] BIOMETRIC FACE VERIFICATION (PRESERVED - CURRENTLY DISABLED FOR PURE QR MODE)
-    To re-enable face recognition in the future, simply uncomment this block:
-    ========================================================================================
-    if (!student.faceDescriptors || student.faceDescriptors.length === 0) {
-      return res.status(403).json({
-        error: "Face not enrolled yet. Please complete face enrollment first.",
-      });
-    }
-    if (!Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
-      return res
-        .status(400)
-        .json({ error: "Invalid face scan. Please try again." });
-    }
-    const distance = bestFaceDistance(student.faceDescriptors, faceDescriptor);
-    if (distance > FACE_MATCH_THRESHOLD) {
-      return res
-        .status(403)
-        .json({ error: "Face does not match the enrolled student." });
-    }
-    ========================================================================================
-    */
 
     // All checks passed — mark present
     const record = session.attendance.find(

@@ -46,10 +46,7 @@ async function Login(req, res) {
 
     const userObj = user.toObject();
     delete userObj.password;
-    delete userObj.faceDescriptors;
     userObj.type = type;
-    userObj.faceEnrolled =
-      type === "student" ? (user.faceDescriptors?.length || 0) > 0 : true;
 
     res
       .cookie("token", token, {
@@ -246,10 +243,7 @@ async function GetUserDetails(req, res) {
     if (user) {
       const obj = user.toObject();
       delete obj.password;
-      delete obj.faceDescriptors;
       obj.type = type;
-      obj.faceEnrolled =
-        type === "student" ? (user.faceDescriptors?.length || 0) > 0 : true;
       res.status(200).json({ user: obj });
     } else {
       res.status(404).json({ message: "User not found." });
@@ -257,41 +251,6 @@ async function GetUserDetails(req, res) {
   } catch (err) {
     console.error("Error fetching user details:", err);
     res.status(500).json({ message: "Error fetching user details." });
-  }
-}
-
-// Layer 5: store a student's enrolled face descriptors (sent by the browser).
-async function EnrollFace(req, res) {
-  try {
-    if (req.user?.type !== "student") {
-      return res.status(403).json({ message: "Only students enroll a face." });
-    }
-
-    const { descriptors } = req.body;
-    if (
-      !Array.isArray(descriptors) ||
-      descriptors.length === 0 ||
-      !descriptors.every(
-        (d) => Array.isArray(d) && d.length === 128 && d.every((n) => typeof n === "number")
-      )
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Invalid face data. Please capture again." });
-    }
-
-    const student = await Student.findById(req.user.id);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found." });
-    }
-
-    student.faceDescriptors = descriptors;
-    await student.save();
-
-    return res.status(200).json({ message: "Face enrolled successfully." });
-  } catch (err) {
-    console.error("Error enrolling face:", err);
-    res.status(500).json({ message: "Error enrolling face." });
   }
 }
 
@@ -328,7 +287,6 @@ const UserController = {
   ForgotPassword,
   SendMail,
   GetUserDetails,
-  EnrollFace,
   ResetDevice,
 };
 
