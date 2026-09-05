@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { clientServer } from "../src/config";
 import { loadModels, captureSingleDescriptor } from "../src/faceApi";
+import "../styles/FaceEnroll.css";
 
 export default function FaceEnroll({ onDone, onCancel }) {
   const videoRef = useRef(null);
@@ -91,56 +92,124 @@ export default function FaceEnroll({ onDone, onCancel }) {
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Set up Face ID</h2>
+    <div className="face-enroll-container">
+      <div className="face-enroll-header">
+        <h2 className="face-enroll-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 5a2 2 0 0 1 2-2h2"></path>
+            <path d="M19 5a2 2 0 0 0-2-2h-2"></path>
+            <path d="M5 19a2 2 0 0 0 2 2h2"></path>
+            <path d="M19 19a2 2 0 0 1-2 2h-2"></path>
+            <circle cx="9" cy="10" r="1"></circle>
+            <circle cx="15" cy="10" r="1"></circle>
+            <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
+          </svg>
+          Set up Face ID
+        </h2>
+        <p className="face-enroll-subtitle">Calibrate facial recognition for verified attendance</p>
+      </div>
       
       {!busy && (
-        <div style={{ 
-          fontSize: "0.9em", 
-          color: "#ccc", 
-          backgroundColor: "rgba(255,255,255,0.05)", 
-          padding: "10px", 
-          borderRadius: "8px",
-          marginBottom: "15px",
-          textAlign: "left"
-        }}>
-          <strong>Tips for best accuracy:</strong>
-          <ul style={{ paddingLeft: "20px", marginTop: "5px", marginBottom: "0" }}>
-            <li>Ensure you have good lighting on your face</li>
+        <div className="face-enroll-tips">
+          <div className="face-enroll-tips-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Tips for best accuracy
+          </div>
+          <ul className="face-enroll-tips-list">
+            <li>Ensure you have bright, even lighting on your face</li>
             <li>Take off glasses or masks if possible</li>
-            <li>Follow the on-screen prompts during capture</li>
+            <li>Follow each pose prompt below before capturing</li>
           </ul>
         </div>
       )}
+
+      {/* 5-Step Visual Progress Tracker */}
+      <div className="face-step-tracker">
+        {prompts.map((p, idx) => {
+          const isCompleted = idx < descriptors.length;
+          const isActive = idx === descriptors.length;
+          return (
+            <div key={idx} className="face-step-item" title={p}>
+              <div className={`face-step-dot ${isCompleted ? "completed" : ""} ${isActive ? "active" : ""}`}>
+                {isCompleted ? (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  idx + 1
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
       
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{
-          width: 320,
-          maxWidth: "100%",
-          borderRadius: 8,
-          transform: "scaleX(-1)",
-          background: "#000",
-        }}
-      />
-      <p style={{ fontWeight: 600 }}>{status}</p>
-      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+      {/* Video Viewport with HUD target brackets */}
+      <div className="face-camera-wrapper">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="face-camera-video"
+        />
+        <div className="face-camera-corners">
+          <span className="face-corner-tr"></span>
+          <span className="face-corner-bl"></span>
+        </div>
+      </div>
+
+      {/* Status Instruction Badge */}
+      <div className="face-status-container">
+        <span className="face-status-dot"></span>
+        <span className="face-status-text">{status}</span>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="face-btn-group">
         {onCancel && (
           <button
+            className="face-btn-cancel"
             onClick={() => {
               stopCamera();
               onCancel();
             }}
             disabled={busy}
           >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
             Cancel
           </button>
         )}
-        <button onClick={handleEnrollStep} disabled={!ready || busy}>
-          {busy ? "Capturing..." : `Capture ${descriptors.length + 1}/${prompts.length}`}
+        <button
+          className="face-btn-capture"
+          onClick={handleEnrollStep}
+          disabled={!ready || busy}
+        >
+          {busy ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="10"></circle>
+              </svg>
+              Capturing...
+            </>
+          ) : (
+            <>
+              <span className="face-btn-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </span>
+              Capture {descriptors.length + 1}/{prompts.length}
+            </>
+          )}
         </button>
       </div>
     </div>
