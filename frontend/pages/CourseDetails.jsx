@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { clientServer } from "../src/config";
 import QRDisplay from "../pages/QRDisplay";
@@ -24,6 +24,7 @@ const CourseDetails = () => {
 
   // Active Session Analytics View (replacing the old floating modal)
   const [activeSession, setActiveSession] = useState(null);
+  const activeSessionIdRef = useRef(null);
   const [attendanceFilter, setAttendanceFilter] = useState("all"); // 'all' | 'present' | 'absent'
   const [attendanceSearch, setAttendanceSearch] = useState("");
 
@@ -36,21 +37,34 @@ const CourseDetails = () => {
 
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const fetchCourseDetails = async (preserveActiveSessionId = null) => {
+  const fetchCourseDetails = async (explicitSessionId = undefined) => {
     try {
       setIsSyncing(true);
       const res = await clientServer.get(`/courses/${id}`);
       setCourse(res.data);
 
-      // Keep active session in sync with fresh data
-      const targetSessionId = preserveActiveSessionId || activeSession?._id;
+      // Determine target session ID:
+      // If explicitSessionId is specified (string ID or null), use it.
+      // Otherwise, check activeSessionIdRef.current.
+      const targetSessionId =
+        explicitSessionId !== undefined
+          ? explicitSessionId
+          : activeSessionIdRef.current;
+
       if (targetSessionId && res.data.sessions) {
         const updated = res.data.sessions.find(
           (s) => s._id === targetSessionId
         );
-        if (updated) {
+        // Only set active session if the user hasn't backed out in the meantime
+        if (updated && activeSessionIdRef.current === targetSessionId) {
           setActiveSession(updated);
+        } else if (!updated) {
+          activeSessionIdRef.current = null;
+          setActiveSession(null);
         }
+      } else {
+        activeSessionIdRef.current = null;
+        setActiveSession(null);
       }
     } catch (error) {
       console.error("Error fetching course details:", error);
@@ -65,22 +79,26 @@ const CourseDetails = () => {
     fetchCourseDetails();
 
     const interval = setInterval(() => {
-      fetchCourseDetails();
+      if (!document.hidden) {
+        fetchCourseDetails();
+      }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [id, activeSession?._id]);
+  }, [id]);
 
   // Open a session and immediately fetch fresh data
   const handleOpenSession = async (session) => {
+    activeSessionIdRef.current = session._id;
     setActiveSession(session);
     await fetchCourseDetails(session._id);
   };
 
   // Back to sessions overview and immediately fetch fresh data
   const handleBackToOverview = async () => {
+    activeSessionIdRef.current = null;
     setActiveSession(null);
-    await fetchCourseDetails();
+    await fetchCourseDetails(null);
   };
 
   const handleCreateSession = async () => {
@@ -100,8 +118,10 @@ const CourseDetails = () => {
       setShowSessionModal(false);
       setSessionDetails({ courseId: "", duration: "" });
 
-      // Refresh course details and auto-open QR
-      await fetchCourseDetails(res.data.sessionId);
+      // Refresh course details without forcing navigation into active session
+      activeSessionIdRef.current = null;
+      setActiveSession(null);
+      await fetchCourseDetails(null);
       setSessionIdForQR(res.data.sessionId);
       setShowQR(true);
     } catch (error) {
@@ -144,7 +164,9 @@ const CourseDetails = () => {
       });
 
       // Refresh course state in background
-      fetchCourseDetails(activeSession._id);
+      if (activeSessionIdRef.current) {
+        fetchCourseDetails(activeSessionIdRef.current);
+      }
     } catch (error) {
       console.error("Error updating attendance status:", error);
       toast.error(error.response?.data?.error || "Failed to update attendance.");
@@ -165,7 +187,11 @@ const CourseDetails = () => {
     try {
       await clientServer.post("/users/reset-device", { studentId });
       toast.success("Phone reset. Student can now scan from a new device.");
-      fetchCourseDetails(activeSession?._id);
+      if (activeSessionIdRef.current) {
+        fetchCourseDetails(activeSessionIdRef.current);
+      } else {
+        fetchCourseDetails(null);
+      }
     } catch (error) {
       console.error("Error resetting device:", error);
       toast.error(error.response?.data?.message || "Failed to reset device.");
@@ -1402,18 +1428,43 @@ const CourseDetails = () => {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setSessionDetails({
-                        courseId: course._id,
-                        duration: "45",
-                      });
-                      setShowSessionModal(true);
-                    }}
-                    className={styles["start-session-header-btn"]}
-                  >
-                    + New Session
-                  </button>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <button
+                      onClick={() => fetchCourseDetails(null)}
+                      className={styles["sync-btn"]}
+                      disabled={isSyncing}
+                      title="Sync live sessions and attendance data"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className={isSyncing ? styles["spin-icon"] : ""}
+                      >
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                      </svg>
+                      <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSessionDetails({
+                          courseId: course._id,
+                          duration: "45",
+                        });
+                        setShowSessionModal(true);
+                      }}
+                      className={styles["start-session-header-btn"]}
+                    >
+                      + New Session
+                    </button>
+                  </div>
                 </div>
 
                 {course.sessions && course.sessions.length > 0 ? (

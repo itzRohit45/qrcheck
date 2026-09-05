@@ -229,6 +229,83 @@
   cursor: pointer;
 }
 
+/* Native Zoom Slider Control */
+.native-zoom-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 290px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.native-zoom-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 7px;
+  border-radius: 6px;
+  min-width: 34px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.native-zoom-slider-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.native-zoom-limit {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #64748b;
+  user-select: none;
+}
+
+.native-zoom-slider {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: #1e293b;
+  outline: none;
+  cursor: pointer;
+  accent-color: #2563eb;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.native-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #2563eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.native-zoom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #2563eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
 /* Compact Toolbar */
 .native-camera-tools {
   display: flex;
@@ -390,4 +467,47 @@
 .native-secondary-btn:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: #ffffff;
+}
+
+/* Mobile Optimizations for Full Viewport Fit */
+@media (max-width: 480px) {
+  .native-scanner-card {
+    padding: 12px 14px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+
+  .native-viewport-wrapper {
+    max-width: 220px;
+    max-height: 220px;
+  }
+
+  .reticle-box {
+    width: 155px;
+    height: 155px;
+  }
+
+  .native-zoom-container {
+    padding: 5px 10px;
+    gap: 8px;
+    max-width: 260px;
+  }
+
+  .native-scanner-title {
+    font-size: 16px;
+  }
+
+  .native-scanner-subtitle {
+    font-size: 11.5px;
+  }
+
+  .native-tool-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .native-cancel-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 }

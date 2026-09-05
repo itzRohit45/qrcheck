@@ -16,6 +16,12 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [facingMode, setFacingMode] = useState("environment"); // "environment" | "user"
 
+  // Camera Zoom states
+  const [hasZoom, setHasZoom] = useState(false);
+  const [zoomRange, setZoomRange] = useState({ min: 1, max: 5, step: 0.1 });
+  const [currentZoom, setCurrentZoom] = useState(1);
+  const zoomCapabilityRef = useRef(null);
+
   const html5QrCodeRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const navigate = useNavigate();
@@ -134,6 +140,42 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
           } catch {
             setHasTorch(false);
           }
+
+          // Detect & initialize camera zoom capability
+          try {
+            const cameraCaps = qrCode.getRunningTrackCameraCapabilities();
+            const zFeature = cameraCaps?.zoomFeature?.();
+            if (zFeature && zFeature.isSupported()) {
+              zoomCapabilityRef.current = zFeature;
+              const minVal = Number(zFeature.min()) || 1;
+              const maxVal = Number(zFeature.max()) || 5;
+              const stepVal = Number(zFeature.step()) || 0.1;
+              setZoomRange({ min: minVal, max: maxVal, step: stepVal });
+              const curVal = zFeature.value ? zFeature.value() : minVal;
+              setCurrentZoom(curVal || 1);
+              setHasZoom(true);
+            } else {
+              const trackCaps = qrCode.getRunningTrackCapabilities();
+              if (trackCaps?.zoom) {
+                setZoomRange({
+                  min: Number(trackCaps.zoom.min) || 1,
+                  max: Number(trackCaps.zoom.max) || 5,
+                  step: Number(trackCaps.zoom.step) || 0.1,
+                });
+                setCurrentZoom(1);
+                setHasZoom(true);
+              } else {
+                setZoomRange({ min: 1, max: 4, step: 0.1 });
+                setCurrentZoom(1);
+                setHasZoom(true);
+              }
+            }
+          } catch (zoomErr) {
+            console.warn("Could not query zoom capability:", zoomErr);
+            setZoomRange({ min: 1, max: 4, step: 0.1 });
+            setCurrentZoom(1);
+            setHasZoom(true);
+          }
         }
       } catch (err) {
         console.error("Camera start failure:", err);
@@ -152,8 +194,48 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
       if (qrCode.getState() === Html5QrcodeScannerState.SCANNING) {
         qrCode.stop().catch(() => {});
       }
+      const videoElem = document.querySelector("#custom-qr-reader video");
+      if (videoElem) {
+        videoElem.style.transform = "none";
+      }
     };
   }, [step, facingMode, handleScanSuccess]);
+
+  // Handle Camera Zoom Change
+  const handleZoomChange = async (val) => {
+    const num = parseFloat(val);
+    setCurrentZoom(num);
+
+    // 1. Try html5-qrcode's zoomFeature
+    if (zoomCapabilityRef.current && zoomCapabilityRef.current.isSupported()) {
+      try {
+        await zoomCapabilityRef.current.apply(num);
+        return;
+      } catch (err) {
+        console.warn("zoomFeature.apply failed:", err);
+      }
+    }
+
+    // 2. Try applying video constraints directly on running track
+    if (html5QrCodeRef.current) {
+      try {
+        await html5QrCodeRef.current.applyVideoConstraints({
+          advanced: [{ zoom: num }],
+        });
+        return;
+      } catch {
+        // Track constraint zoom not accepted
+      }
+    }
+
+    // 3. Fallback: visual scale on video element
+    const videoElem = document.querySelector("#custom-qr-reader video");
+    if (videoElem) {
+      videoElem.style.transform = `scale(${num})`;
+      videoElem.style.transformOrigin = "center center";
+      videoElem.style.transition = "transform 0.1s ease";
+    }
+  };
 
   // Toggle Torch / Flashlight
   const toggleTorch = async () => {
@@ -172,6 +254,8 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
   // Flip Camera
   const flipCamera = async () => {
     await stopScannerSafely();
+    zoomCapabilityRef.current = null;
+    setCurrentZoom(1);
     setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
   };
 
@@ -179,6 +263,7 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
     setSuccess(false);
     setIsAuthError(false);
     setMessage("");
+    setCurrentZoom(1);
     setStep("scan");
   };
 
@@ -257,6 +342,29 @@ export default function QRScanner({ sessionId, onSuccess, onClose }) {
               </div>
             )}
           </div>
+
+          {/* Native Zoom Control Slider */}
+          {isCameraReady && hasZoom && (
+            <div className="native-zoom-container">
+              <span className="native-zoom-badge">
+                {currentZoom.toFixed(1)}x
+              </span>
+              <div className="native-zoom-slider-wrapper">
+                <span className="native-zoom-limit">{zoomRange.min}x</span>
+                <input
+                  type="range"
+                  min={zoomRange.min}
+                  max={zoomRange.max}
+                  step={zoomRange.step}
+                  value={currentZoom}
+                  onChange={(e) => handleZoomChange(e.target.value)}
+                  className="native-zoom-slider"
+                  aria-label="Camera Zoom"
+                />
+                <span className="native-zoom-limit">{zoomRange.max}x</span>
+              </div>
+            </div>
+          )}
 
           {/* Compact Camera Controls Toolbar */}
           {isCameraReady && (
