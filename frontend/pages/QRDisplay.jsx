@@ -21,10 +21,13 @@ export default function QRDisplay({ sessionId }) {
       .then((res) => {
         if (!isMounted) return;
         if (res.data && res.data.tokenPool && res.data.tokenPool.length > 0) {
-          setTokensData(res.data);
+          const serverTime = res.data.serverTime || Date.now();
+          const timeOffset = serverTime - Date.now();
+          setTokensData({ ...res.data, timeOffset });
           const interval = res.data.rotationInterval || 5;
           const startTime = new Date(res.data.date).getTime();
-          const elapsed = Math.max(0, (Date.now() - startTime) / 1000);
+          const syncedNow = Date.now() + timeOffset;
+          const elapsed = Math.max(0, (syncedNow - startTime) / 1000);
           const initialSlot = Math.floor(elapsed / interval);
           setCurrentSlot(initialSlot);
           setSecondsLeft(interval - (Math.floor(elapsed) % interval));
@@ -60,15 +63,17 @@ export default function QRDisplay({ sessionId }) {
     };
   }, [sessionId]);
 
-  // 2. High-performance local timer: rotates QR code every 5 seconds without server requests
+  // 2. High-performance local timer: rotates QR code every 5 seconds synchronized with server clock
   useEffect(() => {
     if (!tokensData || !tokensData.tokenPool) return;
 
     const interval = tokensData.rotationInterval || 5;
     const startTime = new Date(tokensData.date).getTime();
+    const timeOffset = tokensData.timeOffset || 0;
 
     const timer = setInterval(() => {
-      const elapsedSeconds = Math.max(0, (Date.now() - startTime) / 1000);
+      const syncedNow = Date.now() + timeOffset;
+      const elapsedSeconds = Math.max(0, (syncedNow - startTime) / 1000);
       const slot = Math.floor(elapsedSeconds / interval);
       const remainder = interval - (Math.floor(elapsedSeconds) % interval);
 

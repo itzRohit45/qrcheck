@@ -4,8 +4,6 @@ import { Session } from "../model/Session.js";
 import { Course } from "../model/Course.js";
 import { Student } from "../model/Student.js";
 
-const GRACE_MS = 90000; // 90s grace window for token validation
-
 const generateNonce = () => crypto.randomBytes(16).toString("hex");
 
 const buildQrPayload = (sessionId, nonce) =>
@@ -137,6 +135,7 @@ export const getSessionTokens = async (req, res) => {
     return res.json({
       sessionId: session._id,
       date: session.date,
+      serverTime: Date.now(),
       duration: session.duration,
       expiresAt: session.expiresAt,
       rotationInterval: session.rotationInterval || 5,
@@ -211,48 +210,45 @@ export const markAttendance = async (req, res) => {
     }
 
     const now = Date.now();
-    const matchesCurrent =
-      qrData.nonce && qrData.nonce === session.currentNonce;
-    const matchesPrevious =
-      qrData.nonce &&
-      qrData.nonce === session.previousNonce &&
-      now - new Date(session.nonceUpdatedAt).getTime() <= GRACE_MS;
-    const matchesRecent =
-      qrData.nonce &&
-      Array.isArray(session.recentNonces) &&
-      session.recentNonces.some(
-        (n) => n.nonce === qrData.nonce && now - new Date(n.createdAt).getTime() <= 120000
-      );
 
-    // Validate Pre-generated Fast-Rotating Token Pool
-    let matchesTokenPool = false;
+    // Strict Anti-Screenshot QR Validation:
+    // QR codes rotate every 5 seconds. We only accept:
+    // 1. Current slot (0-5s old)
+    // 2. Exactly 1 previous slot (at most 5-6s old, to absorb standard mobile HTTP network latency)
+    // Any screenshot older than 1 slot (>= 10s old) or future slot is strictly rejected.
+    let isQRValid = false;
     if (session.tokenPool && session.tokenPool.length > 0 && qrData.nonce) {
       const interval = session.rotationInterval || 5;
       const elapsedSeconds = Math.max(0, (now - new Date(session.date).getTime()) / 1000);
       const activeSlot = Math.floor(elapsedSeconds / interval);
 
       if (typeof qrData.index === "number") {
-        // Allows current active slot plus 2 previous/next slots (10-15s tolerance window)
+        const isCurrentSlot = qrData.index === activeSlot;
+        const isGraceSlot = qrData.index === activeSlot - 1;
+
         if (
-          session.tokenPool[qrData.index] === qrData.nonce &&
-          Math.abs(activeSlot - qrData.index) <= 2
+          (isCurrentSlot || isGraceSlot) &&
+          session.tokenPool[qrData.index] === qrData.nonce
         ) {
-          matchesTokenPool = true;
+          isQRValid = true;
         }
       } else {
-        // Search in nearby slots window
-        const minSlot = Math.max(0, activeSlot - 2);
-        const maxSlot = Math.min(session.tokenPool.length - 1, activeSlot + 2);
-        for (let i = minSlot; i <= maxSlot; i++) {
-          if (session.tokenPool[i] === qrData.nonce) {
-            matchesTokenPool = true;
-            break;
-          }
+        const previousSlot = Math.max(0, activeSlot - 1);
+        if (
+          session.tokenPool[activeSlot] === qrData.nonce ||
+          session.tokenPool[previousSlot] === qrData.nonce
+        ) {
+          isQRValid = true;
         }
+      }
+    } else if (qrData.nonce) {
+      // Fallback for sessions created without a tokenPool
+      if (qrData.nonce === session.currentNonce) {
+        isQRValid = true;
       }
     }
 
-    if (!matchesCurrent && !matchesPrevious && !matchesRecent && !matchesTokenPool) {
+    if (!isQRValid) {
       return res
         .status(400)
         .json({ error: "QR Code expired. Please scan the latest code on screen." });

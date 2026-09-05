@@ -10,7 +10,6 @@ import { Server } from "socket.io";
 import userRoutes from "./routes/userRoutes.js";
 import SessionRoutes from "./routes/SessionRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
-import { updateQRCode } from "./controllers/SessionController.js";
 
 const app = express();
 const server = createServer(app);
@@ -68,13 +67,5 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
-
-// Rotate QR codes every 15 seconds (outside io.on("connection"))
-setInterval(async () => {
-  const updatedSessions = await updateQRCode();
-  updatedSessions.forEach(({ sessionId, newQRCode }) => {
-    io.to(sessionId.toString()).emit("qrUpdate", newQRCode);
-  });
-}, 15000);
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
