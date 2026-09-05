@@ -9,6 +9,7 @@ import hide from "../assets/hide.png";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userType, setUserType] = useState("student");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
