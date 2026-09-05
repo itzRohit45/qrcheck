@@ -12,6 +12,8 @@ const StudentDashboard = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [courseToLeave, setCourseToLeave] = useState(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const navigate = useNavigate();
 
@@ -84,6 +86,25 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error("Error joining class:", error);
       toast.error(error.response?.data?.error || "Invalid data or server error");
+    }
+  };
+
+  const handleConfirmLeaveCourse = async () => {
+    if (!courseToLeave || !studentId) return;
+    try {
+      setIsLeaving(true);
+      await clientServer.post("/courses/leave-class", {
+        courseId: courseToLeave._id,
+        studentId: studentId,
+      });
+      setCourses((prev) => prev.filter((c) => c._id !== courseToLeave._id));
+      toast.success("Successfully left the class");
+      setCourseToLeave(null);
+    } catch (err) {
+      console.error("Error leaving class:", err);
+      toast.error(err.response?.data?.error || "Failed to leave class");
+    } finally {
+      setIsLeaving(false);
     }
   };
 
@@ -190,9 +211,37 @@ const StudentDashboard = () => {
                         Instructor: {course.teacherId?.name || "Unknown"}
                       </p>
                       <div className={styles["course-details"]}></div>
-                      <button className={styles["view-btn"]}>
-                        View Details
-                      </button>
+                      <div className={styles["card-actions"]}>
+                        <button className={styles["view-btn"]}>
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          className={styles["leave-card-btn"]}
+                          title="Leave Class"
+                          aria-label="Leave Class"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCourseToLeave(course);
+                          }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -203,7 +252,6 @@ const StudentDashboard = () => {
           </div>
         )}
       </main>
-
 
       {/* Join Class Modal */}
       {showJoinModal && (
@@ -234,6 +282,44 @@ const StudentDashboard = () => {
               </button>
               <button onClick={handleJoinClass} className={styles["join-btn"]}>
                 Join Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Class Modal */}
+      {courseToLeave && (
+        <div
+          className={styles.modal}
+          onClick={() => !isLeaving && setCourseToLeave(null)}
+        >
+          <div
+            className={styles["modal-content"]}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Leave Class</h2>
+            <p>
+              Are you sure you want to leave{" "}
+              <strong>{courseToLeave.courseName}</strong>? All your attendance
+              records for this course will be completely removed.
+            </p>
+            <div className={styles["modal-actions"]}>
+              <button
+                type="button"
+                disabled={isLeaving}
+                onClick={() => setCourseToLeave(null)}
+                className={styles["cancel-btn"]}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isLeaving}
+                onClick={handleConfirmLeaveCourse}
+                className={styles["confirm-leave-btn"]}
+              >
+                {isLeaving ? "Leaving..." : "Leave Class"}
               </button>
             </div>
           </div>

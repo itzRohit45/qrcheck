@@ -82,6 +82,31 @@
   margin-top: 10px;
 }
 
+.leave-course-sidebar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leave-course-sidebar-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
 /* Main Content Area */
 .dashboard-content {
   flex: 1;
@@ -96,6 +121,8 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .page-title h1 {
@@ -111,12 +138,41 @@
   font-size: 14px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .instructor-info {
   color: #a0a3bd;
   font-size: 14px;
   background-color: rgba(255, 255, 255, 0.05);
   padding: 8px 16px;
   border-radius: 6px;
+}
+
+.leave-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leave-header-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: translateY(-1px);
 }
 
 /* Dashboard Body */
@@ -402,6 +458,34 @@
   transform: translateY(0) scale(0.98);
 }
 
+.confirm-leave-btn {
+  background: #ef4444;
+  border: none;
+  padding: 11px 26px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.confirm-leave-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.confirm-leave-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Responsive Layout */
 @media (max-width: 768px) {
   .dashboard-wrapper {
@@ -424,8 +508,14 @@
     align-items: flex-start;
   }
   
-  .instructor-info {
+  .header-actions {
+    width: 100%;
     margin-top: 10px;
+    justify-content: space-between;
+  }
+
+  .instructor-info {
+    margin-top: 0;
   }
   
   .dashboard-body {

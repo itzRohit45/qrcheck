@@ -1,6 +1,7 @@
 import { Course } from "../model/Course.js";
 import { Student } from "../model/Student.js";
 import { Teacher } from "../model/Teacher.js";
+import { Session } from "../model/Session.js";
 
 // 🟢 Create a New Class
 export const createClass = async (req, res) => {
@@ -156,5 +157,92 @@ export const getCourseDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching course details:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Delete a Course with Full Cascading Cleanup
+export const deleteClass = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teacherId =
+      req.body?.teacherId || req.query?.teacherId || req.user?.id;
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // Verify ownership if teacherId is provided
+    if (teacherId && course.teacherId.toString() !== teacherId.toString()) {
+      return res.status(403).json({
+        error: "Unauthorized: You are not the instructor for this class",
+      });
+    }
+
+    // 1. Delete all associated sessions
+    await Session.deleteMany({ courseId: id });
+
+    // 2. Remove course from teacher's courses list
+    await Teacher.findByIdAndUpdate(course.teacherId, {
+      $pull: { courses: id },
+    });
+
+    // 3. Remove course from all enrolled students' courses lists
+    await Student.updateMany(
+      { courses: id },
+      { $pull: { courses: id } }
+    );
+
+    // 4. Delete the course document itself
+    await Course.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Class and all associated sessions deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting class:", error);
+    res.status(500).json({ error: "Failed to delete class" });
+  }
+};
+
+// Student Leaves Class / Teacher Removes Student (Complete Attendance Scrubbing)
+export const leaveClass = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.body;
+
+    if (!courseId || !studentId) {
+      return res.status(400).json({
+        error: "Course ID and Student ID are required",
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // 1. Remove student from Course.students
+    await Course.findByIdAndUpdate(courseId, {
+      $pull: { students: studentId },
+    });
+
+    // 2. Remove course from Student.courses
+    await Student.findByIdAndUpdate(studentId, {
+      $pull: { courses: courseId },
+    });
+
+    // 3. Complete Scrub: Remove student's attendance records from all sessions of this course
+    await Session.updateMany(
+      { courseId: courseId },
+      { $pull: { attendance: { studentId: studentId } } }
+    );
+
+    res.status(200).json({
+      message:
+        "Successfully removed student and attendance records from this course",
+    });
+  } catch (error) {
+    console.error("Error leaving class:", error);
+    res.status(500).json({ error: "Failed to leave class" });
   }
 };

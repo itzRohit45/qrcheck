@@ -311,9 +311,16 @@ body {
   color: #00c853;
 }
 
-/* View button inside card */
-.view-btn {
+/* Card Actions */
+.card-actions {
   margin-top: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.view-btn {
+  flex: 1;
   background-color: #2d3348;
   color: white;
   border: none;
@@ -321,13 +328,55 @@ body {
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s ease;
-  width: 100%;
+  transition: background 0.2s ease;
   text-align: center;
+  font-size: 13.5px;
 }
 
 .view-btn:hover {
   background-color: #3b82f6;
+}
+
+.delete-card-btn {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.delete-card-btn:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: scale(1.05);
+}
+
+.confirm-delete-btn {
+  background-color: #ef4444;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.confirm-delete-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.confirm-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Modal styling */

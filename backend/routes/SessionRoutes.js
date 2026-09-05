@@ -5,6 +5,7 @@ import {
   updateAttendanceStatus,
   getCurrentQR,
   getSessionTokens,
+  deleteSession,
 } from "../controllers/SessionController.js";
 import JWT from "../middleware/JWT.js";
 
@@ -19,5 +20,6 @@ router.patch(
   JWT.verifyToken,
   updateAttendanceStatus
 );
+router.delete("/:sessionId", JWT.verifyToken, deleteSession);
 
 export default router;

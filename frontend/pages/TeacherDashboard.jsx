@@ -14,6 +14,9 @@ const TeacherDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
 
+  const [courseToDelete, setCourseToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,6 +91,28 @@ const TeacherDashboard = () => {
     } catch (error) {
       console.error("Error creating class:", error);
       toast.error(error.response?.data?.message || "Something went wrong!");
+    }
+  };
+
+  const handleConfirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+    setIsDeleting(true);
+    try {
+      await clientServer.delete(`/courses/${courseToDelete._id}`, {
+        data: { teacherId },
+      });
+      toast.success("Class deleted successfully!");
+      setCourseToDelete(null);
+
+      const updatedClasses = await clientServer.get(
+        `/courses/teacher/${teacherId}/classes`
+      );
+      setClasses(updatedClasses.data);
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      toast.error(error.response?.data?.error || "Failed to delete class.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -197,9 +222,35 @@ const TeacherDashboard = () => {
                           {classItem.students.length || 0} Students
                         </p>
                       </div>
-                      <button className={styles["view-btn"]}>
-                        View Details
-                      </button>
+                      <div className={styles["card-actions"]}>
+                        <button className={styles["view-btn"]}>
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          className={styles["delete-card-btn"]}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCourseToDelete(classItem);
+                          }}
+                          title="Delete class"
+                          aria-label="Delete class"
+                        >
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -250,6 +301,63 @@ const TeacherDashboard = () => {
                 className={styles["create-btn"]}
               >
                 Create Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Class Confirmation Modal */}
+      {courseToDelete && (
+        <div
+          className={styles.modal}
+          onClick={() => !isDeleting && setCourseToDelete(null)}
+        >
+          <div
+            className={styles["modal-content"]}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: "#f87171", margin: "0 0 12px 0" }}>
+              Delete Class
+            </h2>
+            <p style={{ margin: "0 0 12px 0", color: "#eaeaea" }}>
+              Are you sure you want to permanently delete{" "}
+              <strong>{courseToDelete.courseName}</strong> (
+              {courseToDelete.courseCode})?
+            </p>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "#f87171",
+                background: "rgba(239, 68, 68, 0.1)",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+                margin: "0 0 20px 0",
+                lineHeight: "1.4",
+              }}
+            >
+              This will permanently delete all attendance sessions, QR logs,
+              and remove this class from all{" "}
+              {courseToDelete.students?.length || 0} enrolled student
+              accounts. This action cannot be undone.
+            </p>
+            <div className={styles["modal-actions"]}>
+              <button
+                type="button"
+                onClick={() => setCourseToDelete(null)}
+                className={styles["cancel-btn"]}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCourse}
+                className={styles["confirm-delete-btn"]}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Yes, Delete Class"}
               </button>
             </div>
           </div>

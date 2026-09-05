@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { clientServer } from "../src/config";
 import styles from "../styles/StudentCoursePage.module.css";
 import QRScanner from "../pages/QRScanner";
+import toast from "react-hot-toast";
 
 const StudentCoursePage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
@@ -13,6 +15,8 @@ const StudentCoursePage = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [attendanceData, setAttendanceData] = useState({});
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const fetchCourseDetails = async () => {
     try {
@@ -22,6 +26,25 @@ const StudentCoursePage = () => {
       console.error("Error fetching course details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeaveCourse = async () => {
+    if (!studentId || !id) return;
+    try {
+      setIsLeaving(true);
+      await clientServer.post("/courses/leave-class", {
+        courseId: id,
+        studentId: studentId,
+      });
+      toast.success("Successfully left the class");
+      navigate("/student-dashboard");
+    } catch (err) {
+      console.error("Error leaving class:", err);
+      toast.error(err.response?.data?.error || "Failed to leave class");
+    } finally {
+      setIsLeaving(false);
+      setShowLeaveModal(false);
     }
   };
 
@@ -110,8 +133,30 @@ const StudentCoursePage = () => {
           </span>
           <h3>{course.courseName}</h3>
           <div className={styles["invitation-code"]}>
-            <p>Instructor: {course.teacherId.name}</p>
+            <p>Instructor: {course.teacherId?.name || "Unknown"}</p>
           </div>
+          <button
+            type="button"
+            className={styles["leave-course-sidebar-btn"]}
+            onClick={() => setShowLeaveModal(true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Leave Class</span>
+          </button>
         </div>
       </aside>
 
@@ -123,8 +168,32 @@ const StudentCoursePage = () => {
               View and manage your sessions for this course
             </p>
           </div>
-          <div className={styles["instructor-info"]}>
-            Instructor: {course.teacherId.name}
+          <div className={styles["header-actions"]}>
+            <div className={styles["instructor-info"]}>
+              Instructor: {course.teacherId?.name || "Unknown"}
+            </div>
+            <button
+              type="button"
+              className={styles["leave-header-btn"]}
+              onClick={() => setShowLeaveModal(true)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Leave Class</span>
+            </button>
           </div>
         </header>
 
@@ -284,6 +353,43 @@ const StudentCoursePage = () => {
                 fetchCourseDetails(); // Refresh the attendance list to show "Present"
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Leave Class Modal */}
+      {showLeaveModal && (
+        <div
+          className={styles.modal}
+          onClick={() => !isLeaving && setShowLeaveModal(false)}
+        >
+          <div
+            className={styles["modal-content"]}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Leave Class</h2>
+            <p>
+              Are you sure you want to leave <strong>{course.courseName}</strong>?
+              All your attendance records for this course will be completely removed.
+            </p>
+            <div className={styles["modal-actions"]}>
+              <button
+                type="button"
+                disabled={isLeaving}
+                onClick={() => setShowLeaveModal(false)}
+                className={styles["cancel-btn"]}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isLeaving}
+                onClick={handleLeaveCourse}
+                className={styles["confirm-leave-btn"]}
+              >
+                {isLeaving ? "Leaving..." : "Leave Class"}
+              </button>
+            </div>
           </div>
         </div>
       )}

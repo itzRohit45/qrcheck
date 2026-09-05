@@ -198,6 +198,90 @@ const CourseDetails = () => {
     }
   };
 
+  // Delete an Individual Session
+  const handleDeleteSession = async (sessionId, sessionDate) => {
+    const formattedDate = new Date(sessionDate).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (
+      !window.confirm(
+        `Permanently delete session from ${formattedDate}? All attendance records for this session will be removed.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await clientServer.delete(`/sessions/${sessionId}`);
+      toast.success("Session deleted successfully.");
+
+      // If this session is currently active in analytics, back out to overview
+      if (activeSessionIdRef.current === sessionId) {
+        activeSessionIdRef.current = null;
+        setActiveSession(null);
+        await fetchCourseDetails(null);
+      } else {
+        await fetchCourseDetails(activeSessionIdRef.current);
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      toast.error(error.response?.data?.error || "Failed to delete session.");
+    }
+  };
+
+  // Remove Student from Course (Complete Attendance Scrubbing)
+  const handleRemoveStudent = async (studentId, studentName = "") => {
+    const label = studentName ? `for ${studentName}` : "";
+    if (
+      !window.confirm(
+        `Remove student ${label} from this course? This will unenroll the student and permanently delete all their attendance records for this class.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await clientServer.post("/courses/leave-class", {
+        courseId: id,
+        studentId,
+      });
+      toast.success("Student removed and records scrubbed.");
+      await fetchCourseDetails(activeSessionIdRef.current);
+    } catch (error) {
+      console.error("Error removing student:", error);
+      toast.error(error.response?.data?.error || "Failed to remove student.");
+    }
+  };
+
+  // Permanently Delete Course
+  const handleDeleteCourse = async () => {
+    if (!course) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently delete "${course.courseName}" (${course.courseCode})?\n\nThis will delete all sessions, attendance logs, and remove the course for all enrolled students. This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const teacherId =
+        course.teacherId?._id || course.teacherId || localStorage.getItem("id");
+      await clientServer.delete(`/courses/${id}`, {
+        data: { teacherId },
+      });
+      toast.success("Course deleted successfully.");
+      window.location.href = "/teacher-dashboard";
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      toast.error(error.response?.data?.error || "Failed to delete course.");
+    }
+  };
+
   // Filtered attendance for active session
   const filteredAttendance = useMemo(() => {
     if (!activeSession || !activeSession.attendance) return [];
@@ -394,6 +478,26 @@ const CourseDetails = () => {
           >
             <span className={styles["btn-icon"]}>+</span>
             <span>Start Session</span>
+          </button>
+
+          <button
+            onClick={handleDeleteCourse}
+            className={styles["delete-course-sidebar-btn"]}
+            title="Permanently delete course"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Delete Course</span>
           </button>
         </div>
       </aside>
@@ -606,6 +710,28 @@ const CourseDetails = () => {
                       <span>Show QR Code</span>
                     </button>
                   )}
+
+                  <button
+                    className={styles["delete-session-toolbar-btn"]}
+                    onClick={() =>
+                      handleDeleteSession(activeSession._id, activeSession.date)
+                    }
+                    title="Permanently delete this session"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Delete Session</span>
+                  </button>
                 </div>
               </div>
 
@@ -1305,6 +1431,33 @@ const CourseDetails = () => {
                                       </svg>
                                       <span>Reset Device</span>
                                     </button>
+
+                                    <button
+                                      className={styles["btn-remove-student"]}
+                                      onClick={() =>
+                                        handleRemoveStudent(
+                                          student._id,
+                                          student.name
+                                        )
+                                      }
+                                      title="Remove student and scrub records"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="13"
+                                        height="13"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <line x1="18" y1="8" x2="23" y2="13"></line>
+                                        <line x1="23" y1="8" x2="18" y2="13"></line>
+                                      </svg>
+                                      <span>Remove</span>
+                                    </button>
                                   </div>
                                 </td>
                               </tr>
@@ -1398,6 +1551,32 @@ const CourseDetails = () => {
                                   ></line>
                                 </svg>
                                 <span>Reset Registered Phone</span>
+                              </button>
+
+                              <button
+                                className={styles["btn-remove-student-mobile"]}
+                                onClick={() =>
+                                  handleRemoveStudent(
+                                    student._id,
+                                    student.name
+                                  )
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                  <circle cx="9" cy="7" r="4"></circle>
+                                  <line x1="18" y1="8" x2="23" y2="13"></line>
+                                  <line x1="23" y1="8" x2="18" y2="13"></line>
+                                </svg>
+                                <span>Remove Student</span>
                               </button>
                             </div>
                           </div>
@@ -1572,6 +1751,31 @@ const CourseDetails = () => {
                                         Show QR
                                       </button>
                                     )}
+
+                                    <button
+                                      className={styles["action-btn-danger"]}
+                                      onClick={() =>
+                                        handleDeleteSession(
+                                          session._id,
+                                          session.date
+                                        )
+                                      }
+                                      title="Permanently delete this session"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="13"
+                                        height="13"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                      </svg>
+                                      <span>Delete</span>
+                                    </button>
                                   </div>
                                 </td>
                               </tr>
@@ -1670,6 +1874,18 @@ const CourseDetails = () => {
                                   Show QR
                                 </button>
                               )}
+
+                              <button
+                                className={styles["action-btn-danger-mobile"]}
+                                onClick={() =>
+                                  handleDeleteSession(
+                                    session._id,
+                                    session.date
+                                  )
+                                }
+                              >
+                                Delete Session
+                              </button>
                             </div>
                           </div>
                         );

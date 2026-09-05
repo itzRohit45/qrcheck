@@ -355,3 +355,32 @@ export const updateAttendanceStatus = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const deleteSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "sessionId is required!" });
+    }
+
+    const session = await Session.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Session not found!" });
+    }
+
+    // Remove session from Course.sessions
+    await Course.findByIdAndUpdate(session.courseId, {
+      $pull: { sessions: sessionId },
+    });
+
+    // Delete the session document
+    await Session.findByIdAndDelete(sessionId);
+
+    return res.json({ message: "Session deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
