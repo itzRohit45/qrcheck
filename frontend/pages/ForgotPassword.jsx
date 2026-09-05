@@ -7,9 +7,6 @@ import toast from "react-hot-toast";
 
 const ForgotPassword = () => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [SaveOTP, setOtp] = useState(
-    Math.floor(100000 + Math.random() * 900000) || 0
-  );
   const [currentPage, setCurrentPage] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setInputOtp] = useState("");
@@ -40,13 +37,8 @@ const ForgotPassword = () => {
         type: "forgot",
       });
 
-      setOtp(response.data.otp);
       setCurrentPage(2);
-      if (response.data.fallback) {
-        toast(`Verification OTP: ${response.data.otp}`, { duration: 10000 });
-      } else {
-        toast.success("OTP sent successfully!");
-      }
+      toast.success(response.data.message || "OTP sent! Please check your email.");
     } catch (error) {
       console.error("Error sending OTP:", error);
       toast.error("Failed to send OTP. Please try again.");
@@ -62,10 +54,18 @@ const ForgotPassword = () => {
       return;
     }
 
-    if (parseInt(otp) === parseInt(SaveOTP)) {
+    try {
+      setLoading(true);
+      await clientServer.post("/users/verify-otp", {
+        email: email,
+        otp: Number(otp),
+      });
+      toast.success("OTP verified successfully!");
       setCurrentPage(3);
-    } else {
-      toast.error("Invalid OTP. Please try again.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid or expired OTP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 

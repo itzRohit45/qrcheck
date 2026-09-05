@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import { Student } from "../model/Student.js";
 import { Teacher } from "../model/Teacher.js";
+import { Otp } from "../model/Otp.js";
 import JWT from "../middleware/JWT.js";
 import Mailer from "../middleware/Mailer.js";
 import bcrypt from "bcryptjs";
@@ -210,6 +211,11 @@ The Support Team`;
   }
 
   console.log(`[SendMail] Calling Mailer.sendMail for: ${email}`);
+  
+  // Store OTP in database with 10-minute expiry
+  await Otp.deleteMany({ email });
+  await new Otp({ email, otp }).save();
+
   const result = await Mailer.sendMail(email, subject, text);
 
   console.log("[SendMail] Mailer.sendMail returned result:", result.success);
@@ -217,16 +223,34 @@ The Support Team`;
   if (result.success) {
     console.log("[SendMail] Sending 200 response to client");
     return res.status(200).json({
-      message: "OTP sent successfully. Please check your email.",
-      otp: otp,
+      message: "OTP sent successfully. Please check your email inbox.",
     });
   } else {
-    console.warn(`[SendMail] Email transport failed or blocked. Providing fallback OTP: ${otp}`);
-    return res.status(200).json({
-      message: "Email delivery delayed. Verification OTP: " + otp,
-      otp: otp,
-      fallback: true,
+    console.error("[SendMail] Sending 500 response because Mailer failed");
+    return res.status(500).json({
+      message: "Failed to send email. Please check your email address and try again.",
     });
+  }
+}
+
+async function VerifyOTP(req, res) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    const record = await Otp.findOne({ email, otp: Number(otp) });
+    if (!record) {
+      return res.status(400).json({ message: "Invalid or expired OTP. Please try again." });
+    }
+
+    // OTP verified — remove so it cannot be reused
+    await Otp.deleteMany({ email });
+    return res.status(200).json({ message: "OTP verified successfully.", success: true });
+  } catch (err) {
+    console.error("VerifyOTP error:", err);
+    return res.status(500).json({ message: "Error verifying OTP." });
   }
 }
 
@@ -288,6 +312,7 @@ const UserController = {
   Signup,
   ForgotPassword,
   SendMail,
+  VerifyOTP,
   GetUserDetails,
   ResetDevice,
 };

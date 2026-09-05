@@ -9,12 +9,9 @@ import hide from "../assets/hide.png";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [SaveOTP, setOtp] = useState(
-    Math.floor(100000 + Math.random() * 900000) || 0
-  );
   const [userType, setUserType] = useState("student");
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const navigate = useNavigate();
 
   const handleRegisterSubmit = async (e) => {
@@ -96,13 +93,8 @@ const Signup = () => {
         email,
         type: "registration",
       });
-      setOtp(res.data.otp);
       
-      if (res.data.fallback) {
-        toast(`Verification OTP: ${res.data.otp}`, { duration: 10000 });
-      } else {
-        toast.success(res.data.message || "OTP sent successfully!");
-      }
+      toast.success(res.data.message || "OTP sent successfully! Please check your email.");
 
       document.querySelector(`.${styles.firstSlide}`).style.display = "none";
       document.querySelector(`.${styles.secondSlide}`).style.display = "block";
@@ -114,15 +106,27 @@ const Signup = () => {
     }
   };
 
-  const toggleThree = () => {
+  const toggleThree = async () => {
+    let email = document.querySelector(`input[name='email']`).value;
     let otp = document.querySelector(`input[name='otp']`).value;
-    if (otp.length === 0) {
+    if (!otp) {
       toast.error("Please enter OTP");
-    } else if (parseInt(otp) === parseInt(SaveOTP)) {
+      return;
+    }
+
+    try {
+      setVerifyingOtp(true);
+      await clientServer.post("/users/verify-otp", {
+        email,
+        otp: Number(otp),
+      });
+      toast.success("OTP verified successfully!");
       document.querySelector(`.${styles.secondSlide}`).style.display = "none";
       document.querySelector(`.${styles.thirdSlide}`).style.display = "block";
-    } else {
-      toast.error("Invalid OTP");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -224,8 +228,9 @@ const Signup = () => {
                   type="button"
                   className={styles.signupButton}
                   onClick={toggleThree}
+                  disabled={verifyingOtp}
                 >
-                  Submit
+                  {verifyingOtp ? "Verifying..." : "Submit"}
                 </button>
               </div>
             </div>

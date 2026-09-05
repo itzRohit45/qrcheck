@@ -11,6 +11,7 @@ router.post("/signup", UserController.Signup);
 router.post("/forgotpassword", UserController.ForgotPassword);
 
 router.post("/sendmail", UserController.SendMail);
+router.post("/verify-otp", UserController.VerifyOTP);
 
 router.get("/user", UserController.GetUserDetails);
 
