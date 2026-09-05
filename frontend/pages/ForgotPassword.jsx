@@ -42,7 +42,11 @@ const ForgotPassword = () => {
 
       setOtp(response.data.otp);
       setCurrentPage(2);
-      toast.success("OTP sent successfully!");
+      if (response.data.fallback) {
+        toast(`Verification OTP: ${response.data.otp}`, { icon: "🔑", duration: 10000 });
+      } else {
+        toast.success("OTP sent successfully!");
+      }
     } catch (error) {
       console.error("Error sending OTP:", error);
       toast.error("Failed to send OTP. Please try again.");

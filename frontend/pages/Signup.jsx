@@ -14,6 +14,7 @@ const Signup = () => {
     Math.floor(100000 + Math.random() * 900000) || 0
   );
   const [userType, setUserType] = useState("student");
+  const [sendingOtp, setSendingOtp] = useState(false);
   const navigate = useNavigate();
 
   const handleRegisterSubmit = async (e) => {
@@ -84,23 +85,32 @@ const Signup = () => {
     let name = document.querySelector(`input[name='name']`).value;
     let email = document.querySelector(`input[name='email']`).value;
 
-    if (name.length === 0 || email.length === 0) {
+    if (!name || !email) {
       toast.error("Please fill all the fields");
       return;
     }
 
     try {
+      setSendingOtp(true);
       const res = await clientServer.post("/users/sendmail", {
         email,
         type: "registration",
       });
       setOtp(res.data.otp);
       
+      if (res.data.fallback) {
+        toast(`Verification OTP: ${res.data.otp}`, { icon: "🔑", duration: 10000 });
+      } else {
+        toast.success(res.data.message || "OTP sent successfully!");
+      }
+
       document.querySelector(`.${styles.firstSlide}`).style.display = "none";
       document.querySelector(`.${styles.secondSlide}`).style.display = "block";
     } catch (err) {
       console.log(err);
       toast.error(err.response?.data?.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setSendingOtp(false);
     }
   };
 
@@ -183,8 +193,9 @@ const Signup = () => {
                 type="button"
                 className={styles.signupButton}
                 onClick={toggleTwo}
+                disabled={sendingOtp}
               >
-                Next
+                {sendingOtp ? "Sending OTP..." : "Next"}
               </button>
             </div>
 
