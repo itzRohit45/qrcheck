@@ -9,6 +9,8 @@ const sessionSchema = new Schema(
     currentQRCode: { type: String }, // Latest QR image (data URL) for display
     currentNonce: { type: String }, // Latest valid nonce embedded in the QR
     previousNonce: { type: String }, // Previous nonce, accepted during a short grace window
+    tokenPool: [{ type: String }], // Pre-generated pool of unique one-time tokens for this session
+    rotationInterval: { type: Number, default: 5 }, // Seconds each token is displayed on teacher screen
     recentNonces: [
       {
         nonce: { type: String },

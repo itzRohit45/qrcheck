@@ -4,6 +4,7 @@ import {
   markAttendance,
   updateAttendanceStatus,
   getCurrentQR,
+  getSessionTokens,
 } from "../controllers/SessionController.js";
 import JWT from "../middleware/JWT.js";
 
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.post("/create", JWT.verifyToken, createSession);
 router.get("/:sessionId/current-qr", getCurrentQR);
+router.get("/:sessionId/tokens", getSessionTokens);
 router.post("/mark-attendance", JWT.verifyToken, markAttendance);
 router.patch(
   "/update-attendance-status",

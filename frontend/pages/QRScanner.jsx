@@ -9,8 +9,18 @@ import {
 import toast from "react-hot-toast";
 import "../styles/QRScanner.css";
 
+/*
+========================================================================================
+[CONFIGURATION] PURE QR MODE vs BIOMETRIC FACE ID
+- Set REQUIRE_FACE_ID = false for instant 1-step QR attendance (Professor's design).
+- Set REQUIRE_FACE_ID = true to restore 2-step Face Recognition verification.
+All Face ID code, models, and liveness helpers are 100% preserved below!
+========================================================================================
+*/
+const REQUIRE_FACE_ID = false;
+
 export default function QRScanner({ sessionId, onSuccess }) {
-  const [step, setStep] = useState("scan"); // scan | face | result
+  const [step, setStep] = useState("scan"); // scan | face | submitting | result
   const [message, setMessage] = useState("");
   const [isAuthError, setIsAuthError] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,12 +31,14 @@ export default function QRScanner({ sessionId, onSuccess }) {
   const streamRef = useRef(null);
   const navigate = useNavigate();
 
-  // Preload face-api models immediately so there is no delay after QR is scanned
+  // Preload face models only if Face ID is enabled
   useEffect(() => {
-    loadModels().catch((e) => console.error("Failed to preload face models:", e));
+    if (REQUIRE_FACE_ID) {
+      loadModels().catch((e) => console.error("Face model preload:", e));
+    }
   }, []);
 
-  // Step 1: scan the rotating QR code
+  // Step 1: Scan the rotating QR code
   useEffect(() => {
     if (step !== "scan") return;
 
@@ -60,6 +72,41 @@ export default function QRScanner({ sessionId, onSuccess }) {
         } catch {
           /* ignore */
         }
+
+        // =====================================================================
+        // PURE QR MODE: Directly submit attendance without camera/face lag!
+        // =====================================================================
+        if (!REQUIRE_FACE_ID) {
+          setMessage("Recording attendance...");
+          setStep("submitting");
+
+          try {
+            const res = await clientServer.post("/sessions/mark-attendance", {
+              sessionId,
+              scannedQRData: decodedText,
+              deviceId: getDeviceId(),
+            });
+            finish(true, res.data.message || "Attendance marked successfully!");
+          } catch (e) {
+            const isAuth = e.response?.status === 401;
+            const errorMsg = isAuth
+              ? "Session expired or invalid login. Please log in again to mark attendance."
+              : e.response?.data?.error ||
+                e.response?.data?.message ||
+                e.message ||
+                "Failed to mark attendance.";
+
+            if (isAuth) {
+              localStorage.removeItem("token");
+            }
+            finish(false, errorMsg, isAuth);
+          }
+          return;
+        }
+
+        // =====================================================================
+        // [PRESERVED] BIOMETRIC FACE ID STEP (Active if REQUIRE_FACE_ID = true)
+        // =====================================================================
         setMessage("Align your face and click 'Capture & Verify'");
         setStep("face");
       },
@@ -73,7 +120,12 @@ export default function QRScanner({ sessionId, onSuccess }) {
     };
   }, [step, sessionId]);
 
-  // Step 2: Camera setup for face verification
+  /*
+  ==============================================================================
+  [PRESERVED] FACE CAMERA & RECOGNITION HELPERS
+  These functions are preserved for when REQUIRE_FACE_ID is enabled.
+  ==============================================================================
+  */
   useEffect(() => {
     if (step !== "face") return;
     let cancelled = false;
@@ -130,7 +182,7 @@ export default function QRScanner({ sessionId, onSuccess }) {
     }
   };
 
-  // Capture face and submit attendance
+  // Preserved: Manual face descriptor capture & submission
   const handleVerifyFace = async () => {
     if (!videoRef.current || busy) return;
     setBusy(true);
@@ -157,13 +209,12 @@ export default function QRScanner({ sessionId, onSuccess }) {
     } catch (e) {
       setBusy(false);
       const isAuth = e.response?.status === 401;
-      const errorMsg =
-        (isAuth
-          ? "Session expired or invalid login. Please log in again to mark attendance."
-          : e.response?.data?.error ||
-            e.response?.data?.message ||
-            e.message ||
-            "Failed to mark attendance.");
+      const errorMsg = isAuth
+        ? "Session expired or invalid login. Please log in again to mark attendance."
+        : e.response?.data?.error ||
+          e.response?.data?.message ||
+          e.message ||
+          "Failed to mark attendance.";
 
       if (isAuth) {
         localStorage.removeItem("token");
@@ -171,14 +222,6 @@ export default function QRScanner({ sessionId, onSuccess }) {
 
       finish(false, errorMsg, isAuth);
     }
-  };
-
-  // Retry ONLY face verification without re-scanning QR code!
-  const retryFaceOnly = () => {
-    setSuccess(false);
-    setIsAuthError(false);
-    setMessage("Align your face and click 'Capture & Verify'");
-    setStep("face");
   };
 
   // Re-scan QR code from scratch
@@ -190,8 +233,16 @@ export default function QRScanner({ sessionId, onSuccess }) {
     setStep("scan");
   };
 
+  const retryFaceOnly = () => {
+    setSuccess(false);
+    setIsAuthError(false);
+    setMessage("Align your face and click 'Capture & Verify'");
+    setStep("face");
+  };
+
   return (
     <div className="qr-scanner-wrapper">
+      {/* 1. QR Scanner View */}
       {step === "scan" && (
         <>
           <div className="qr-scanner-header">
@@ -210,6 +261,25 @@ export default function QRScanner({ sessionId, onSuccess }) {
         </>
       )}
 
+      {/* 2. Submitting / Processing State */}
+      {step === "submitting" && (
+        <div style={{ padding: "40px 20px", textAlign: "center" }}>
+          <div style={{
+            width: "44px",
+            height: "44px",
+            border: "3px solid rgba(255, 255, 255, 0.1)",
+            borderTop: "3px solid #38bdf8",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 16px auto"
+          }}></div>
+          <p style={{ fontSize: "16px", fontWeight: 600, color: "#e2e8f0", margin: 0 }}>
+            {message}
+          </p>
+        </div>
+      )}
+
+      {/* 3. [PRESERVED] Face Verification View (if REQUIRE_FACE_ID = true) */}
       {step === "face" && (
         <>
           <div className="qr-scanner-header">
@@ -248,59 +318,27 @@ export default function QRScanner({ sessionId, onSuccess }) {
           </div>
 
           <div className="face-btn-group">
-            <button
-              className="face-btn-cancel"
-              onClick={rescanQR}
-              disabled={busy}
-              title="Scan a different QR code"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
+            <button className="face-btn-cancel" onClick={rescanQR} disabled={busy}>
               Re-scan QR
             </button>
-
-            <button
-              className="face-btn-capture"
-              onClick={handleVerifyFace}
-              disabled={busy}
-            >
-              {busy ? (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
-                    <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="10"></circle>
-                  </svg>
-                  Verifying...
-                </>
-              ) : (
-                <>
-                  <span className="face-btn-icon">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                      <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                  </span>
-                  Capture & Verify Face
-                </>
-              )}
+            <button className="face-btn-capture" onClick={handleVerifyFace} disabled={busy}>
+              {busy ? "Verifying..." : "Capture & Verify Face"}
             </button>
           </div>
         </>
       )}
 
+      {/* 4. Result View */}
       {step === "result" && (
         <div className="qr-result-container">
           <div className={`qr-result-badge ${success ? "success" : "error"}`}>
             {success ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="15" y1="9" x2="9" y2="15"></line>
                 <line x1="9" y1="9" x2="15" y2="15"></line>
@@ -328,18 +366,11 @@ export default function QRScanner({ sessionId, onSuccess }) {
                 </button>
               ) : (
                 <>
-                  {/* Retry Face Verification directly using the valid scanned QR! */}
-                  {qrDataRef.current && (
+                  {REQUIRE_FACE_ID && qrDataRef.current && (
                     <button className="qr-retry-face-btn" onClick={retryFaceOnly}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="1 4 1 10 7 10"></polyline>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                      </svg>
                       Retry Face Verification
                     </button>
                   )}
-
-                  {/* Re-scan QR only if desired */}
                   <button className="qr-rescan-btn" onClick={rescanQR}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="3" width="7" height="7"></rect>

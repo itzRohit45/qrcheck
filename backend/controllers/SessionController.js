@@ -56,15 +56,22 @@ export const createSession = async (req, res) => {
       scannedAt: null,
     }));
 
+    // Pre-generate token pool for this session (1 token per 5 seconds of session)
+    const rotationInterval = 5; // seconds
+    const totalTokens = Math.max(300, Math.ceil((duration * 60) / rotationInterval) + 50);
+    const tokenPool = Array.from({ length: totalTokens }, () => generateNonce());
+
     const session = new Session({
       courseId,
       duration,
       expiresAt,
       attendance: initialAttendance,
+      tokenPool,
+      rotationInterval,
     });
 
-    // Give the session a valid QR immediately (no blank screen before first tick)
-    const nonce = generateNonce();
+    // Give the session a valid initial QR immediately
+    const nonce = tokenPool[0] || generateNonce();
     session.currentNonce = nonce;
     session.previousNonce = null;
     session.recentNonces = [{ nonce, createdAt: new Date() }];
@@ -81,6 +88,7 @@ export const createSession = async (req, res) => {
     return res.json({
       message: "Session created successfully!",
       sessionId: session._id,
+      tokenPoolCount: tokenPool.length,
     });
   } catch (error) {
     console.error("Error creating session:", error);
@@ -126,6 +134,42 @@ export async function updateQRCode() {
     return [];
   }
 }
+
+// Fetch pre-generated tokens for client-side rotation on the teacher's screen (0 latency)
+export const getSessionTokens = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await Session.findById(sessionId).select(
+      "date duration expiresAt tokenPool rotationInterval currentNonce currentQRCode"
+    );
+    if (!session) {
+      return res.status(404).json({ error: "Session not found!" });
+    }
+
+    // If session doesn't have a token pool yet (e.g. created before this update), generate it on-the-fly
+    if (!session.tokenPool || session.tokenPool.length === 0) {
+      const rotationInterval = 5;
+      const totalTokens = Math.max(300, Math.ceil((session.duration * 60) / rotationInterval) + 50);
+      session.tokenPool = Array.from({ length: totalTokens }, () => generateNonce());
+      session.rotationInterval = rotationInterval;
+      await session.save();
+    }
+
+    return res.json({
+      sessionId: session._id,
+      date: session.date,
+      duration: session.duration,
+      expiresAt: session.expiresAt,
+      rotationInterval: session.rotationInterval || 5,
+      tokenPool: session.tokenPool,
+      currentNonce: session.currentNonce,
+      currentQRCode: session.currentQRCode,
+    });
+  } catch (error) {
+    console.error("Error fetching session tokens:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 // Lets the QR display fetch the current code on mount (before the next socket tick).
 export const getCurrentQR = async (req, res) => {
@@ -201,10 +245,38 @@ export const markAttendance = async (req, res) => {
         (n) => n.nonce === qrData.nonce && now - new Date(n.createdAt).getTime() <= 120000
       );
 
-    if (!matchesCurrent && !matchesPrevious && !matchesRecent) {
+    // Validate Pre-generated Fast-Rotating Token Pool
+    let matchesTokenPool = false;
+    if (session.tokenPool && session.tokenPool.length > 0 && qrData.nonce) {
+      const interval = session.rotationInterval || 5;
+      const elapsedSeconds = Math.max(0, (now - new Date(session.date).getTime()) / 1000);
+      const activeSlot = Math.floor(elapsedSeconds / interval);
+
+      if (typeof qrData.index === "number") {
+        // Allows current active slot plus 2 previous/next slots (10-15s tolerance window)
+        if (
+          session.tokenPool[qrData.index] === qrData.nonce &&
+          Math.abs(activeSlot - qrData.index) <= 2
+        ) {
+          matchesTokenPool = true;
+        }
+      } else {
+        // Search in nearby slots window
+        const minSlot = Math.max(0, activeSlot - 2);
+        const maxSlot = Math.min(session.tokenPool.length - 1, activeSlot + 2);
+        for (let i = minSlot; i <= maxSlot; i++) {
+          if (session.tokenPool[i] === qrData.nonce) {
+            matchesTokenPool = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!matchesCurrent && !matchesPrevious && !matchesRecent && !matchesTokenPool) {
       return res
         .status(400)
-        .json({ error: "QR Code expired. Scan the latest code on screen." });
+        .json({ error: "QR Code expired. Please scan the latest code on screen." });
     }
 
     const student = await Student.findById(studentId);
@@ -224,7 +296,11 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    // Layer 5: face verification — the accept/reject decision is made on the server
+    /*
+    ========================================================================================
+    [OPTIONAL] BIOMETRIC FACE VERIFICATION (PRESERVED - CURRENTLY DISABLED FOR PURE QR MODE)
+    To re-enable face recognition in the future, simply uncomment this block:
+    ========================================================================================
     if (!student.faceDescriptors || student.faceDescriptors.length === 0) {
       return res.status(403).json({
         error: "Face not enrolled yet. Please complete face enrollment first.",
@@ -241,6 +317,8 @@ export const markAttendance = async (req, res) => {
         .status(403)
         .json({ error: "Face does not match the enrolled student." });
     }
+    ========================================================================================
+    */
 
     // All checks passed — mark present
     const record = session.attendance.find(
