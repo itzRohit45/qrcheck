@@ -226,9 +226,13 @@ The Support Team`;
       message: "OTP sent successfully. Please check your email inbox.",
     });
   } else {
-    console.error("[SendMail] Sending 500 response because Mailer failed");
+    const errorDetails =
+      result.error?.response?.body?.errors?.[0]?.message ||
+      result.error?.message ||
+      "Failed to send email.";
+    console.error("[SendMail] Sending 500 response because Mailer failed:", errorDetails);
     return res.status(500).json({
-      message: "Failed to send email. Please check your email address and try again.",
+      message: `Email delivery failed: ${errorDetails}`,
     });
   }
 }
