@@ -317,8 +317,11 @@
 .modal-scanner {
   max-height: 94vh;
   overflow-y: auto;
-  padding: 16px 18px;
-  width: min(440px, 94vw);
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: min(420px, 94vw);
   box-sizing: border-box;
 }
 

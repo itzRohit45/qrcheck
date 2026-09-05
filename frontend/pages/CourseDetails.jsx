@@ -34,8 +34,11 @@ const CourseDetails = () => {
   const [showQR, setShowQR] = useState(false);
   const [sessionIdForQR, setSessionIdForQR] = useState("");
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const fetchCourseDetails = async (preserveActiveSessionId = null) => {
     try {
+      setIsSyncing(true);
       const res = await clientServer.get(`/courses/${id}`);
       setCourse(res.data);
 
@@ -53,12 +56,32 @@ const CourseDetails = () => {
       console.error("Error fetching course details:", error);
     } finally {
       setLoading(false);
+      setIsSyncing(false);
     }
   };
 
+  // Initial load and periodic background auto-sync every 4 seconds
   useEffect(() => {
     fetchCourseDetails();
-  }, [id]);
+
+    const interval = setInterval(() => {
+      fetchCourseDetails();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [id, activeSession?._id]);
+
+  // Open a session and immediately fetch fresh data
+  const handleOpenSession = async (session) => {
+    setActiveSession(session);
+    await fetchCourseDetails(session._id);
+  };
+
+  // Back to sessions overview and immediately fetch fresh data
+  const handleBackToOverview = async () => {
+    setActiveSession(null);
+    await fetchCourseDetails();
+  };
 
   const handleCreateSession = async () => {
     if (isCreatingSession) return;
@@ -285,7 +308,7 @@ const CourseDetails = () => {
             className={`${styles["menu-item"]} ${
               activeSession === null ? styles.active : ""
             }`}
-            onClick={() => setActiveSession(null)}
+            onClick={handleBackToOverview}
           >
             <span className={styles["menu-icon"]}>
               <svg
@@ -385,24 +408,49 @@ const CourseDetails = () => {
               {/* Back to overview and Session Header */}
               <div className={styles["session-view-header"]}>
                 <div className={styles["session-title-group"]}>
-                  <button
-                    onClick={() => setActiveSession(null)}
-                    className={styles["back-to-list-btn"]}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+                  <div className={styles["top-nav-row"]}>
+                    <button
+                      onClick={handleBackToOverview}
+                      className={styles["back-to-list-btn"]}
                     >
-                      <line x1="19" y1="12" x2="5" y2="12"></line>
-                      <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>Back to Sessions</span>
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                      </svg>
+                      <span>Back to Sessions</span>
+                    </button>
+
+                    <button
+                      onClick={() => fetchCourseDetails(activeSession._id)}
+                      className={styles["sync-btn"]}
+                      disabled={isSyncing}
+                      title="Sync live attendance data"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className={isSyncing ? styles["spin-icon"] : ""}
+                      >
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                      </svg>
+                      <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+                    </button>
+                  </div>
 
                   <div>
                     <div className={styles["session-badge-row"]}>
@@ -1455,7 +1503,7 @@ const CourseDetails = () => {
                                   <div className={styles["inline-action-group"]}>
                                     <button
                                       className={styles["action-btn-primary"]}
-                                      onClick={() => setActiveSession(session)}
+                                      onClick={() => handleOpenSession(session)}
                                       title="View attendance details & analytics"
                                     >
                                       View Analytics
@@ -1556,7 +1604,7 @@ const CourseDetails = () => {
                             <div className={styles["mobile-session-actions"]}>
                               <button
                                 className={styles["action-btn-primary-mobile"]}
-                                onClick={() => setActiveSession(session)}
+                                onClick={() => handleOpenSession(session)}
                               >
                                 View Analytics & Attendance
                               </button>

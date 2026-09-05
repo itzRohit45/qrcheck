@@ -1,364 +1,393 @@
-/* ==========================================================================
-   QR Scanner & Camera Override Styles (html5-qrcode customization)
-   ========================================================================== */
+/* QRScanner.css - Native-feeling mobile camera scanner */
 
-.qr-scanner-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+.native-qr-scanner-modal {
   width: 100%;
   max-width: 440px;
   margin: 0 auto;
-  font-family: inherit;
-  color: #f1f5f9;
+  box-sizing: border-box;
 }
 
-.qr-scanner-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 12px;
-}
-
-.qr-scanner-header-main {
-  text-align: left;
-}
-
-.qr-scanner-close-icon {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.qr-scanner-close-icon:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.qr-scanner-footer-bar {
-  margin-top: 10px;
-  width: 100%;
-}
-
-.qr-scanner-cancel-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #cbd5e1;
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  max-width: 240px;
-}
-
-.qr-scanner-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-/* ==========================================================================
-   Html5QrcodeScanner Overrides
-   ========================================================================== */
-
-#qr-reader {
-  width: 100% !important;
-  border: none !important;
-  padding: 0 !important;
-  background: transparent !important;
-  font-family: inherit !important;
-}
-
-/* Scan Viewport Container - Compact on mobile to avoid overflow */
-#qr-reader__scan_region {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  background: #0f172a !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  max-height: min(38vh, 270px) !important;
-  max-width: min(38vh, 270px) !important;
-  aspect-ratio: 1 / 1 !important;
-  margin: 0 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  box-shadow: none !important;
-}
-
-/* Video inside scan region */
-#qr-reader__scan_region video {
-  border-radius: 10px !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-height: min(38vh, 270px) !important;
-  object-fit: cover !important;
-}
-
-/* Pre-scan Camera / QR graphic illustration */
-#qr-reader__scan_region img {
-  filter: invert(0.85) hue-rotate(180deg) brightness(1.2) !important;
-  opacity: 0.8 !important;
-  max-width: 50px !important;
-  margin: 16px auto 8px auto !important;
-  display: block !important;
-}
-
-/* Dashboard & Sections */
-#qr-reader__dashboard {
-  background: transparent !important;
-  padding: 8px 0 4px 0 !important;
-}
-
-#qr-reader__dashboard_section {
-  padding: 2px 0 !important;
-}
-
-#qr-reader__dashboard_section_csr {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-/* Text & labels inside scanner */
-#qr-reader span,
-#qr-reader div,
-#qr-reader p {
-  color: #94a3b8 !important;
-  font-family: inherit !important;
-  font-size: 13px !important;
-}
-
-/* Zoom range slider */
-#qr-reader input[type="range"] {
-  accent-color: #2563eb !important;
-  margin: 4px 0 !important;
-  width: 180px !important;
-  cursor: pointer;
-}
-
-/* Select Camera Dropdown */
-#qr-reader select,
-#html5-qrcode-select-camera {
-  background: #141824 !important;
-  color: #f1f5f9 !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  padding: 8px 14px !important;
-  border-radius: 8px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  outline: none !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease !important;
-  max-width: 260px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  margin: 4px auto !important;
-  display: block !important;
-  text-align: center !important;
-}
-
-#qr-reader select:hover,
-#html5-qrcode-select-camera:hover {
-  border-color: rgba(59, 130, 246, 0.6) !important;
-  background: #181d2e !important;
-}
-
-#qr-reader select option {
-  background: #1f2438 !important;
-  color: #ffffff !important;
-  padding: 8px !important;
-}
-
-/* ==========================================================================
-   Buttons inside #qr-reader - Clean, non-glowing solid blue/green theme
-   ========================================================================== */
-
-#qr-reader button {
-  background: #2563eb !important;
-  color: #ffffff !important;
-  border: 1px solid #1d4ed8 !important;
-  padding: 8px 18px !important;
-  border-radius: 8px !important;
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.1px !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
-  transition: background 0.2s ease !important;
-  margin: 4px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  outline: none !important;
-  text-decoration: none !important;
-  transform: none !important;
-}
-
-#qr-reader button:hover {
-  background: #1d4ed8 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-#qr-reader button:active {
-  transform: scale(0.98) !important;
-}
-
-/* Request Camera Permission Button */
-#html5-qrcode-button-camera-permission {
-  background: #2563eb !important;
-  border-color: #1d4ed8 !important;
-  padding: 10px 22px !important;
-  font-size: 14px !important;
-}
-
-/* Start Scanning Button - Clean Emerald Green */
-#html5-qrcode-button-camera-start {
-  background: #059669 !important;
-  border: 1px solid #047857 !important;
-  box-shadow: none !important;
-}
-
-#html5-qrcode-button-camera-start:hover {
-  background: #047857 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* Stop Scanning Button - Clean Crimson */
-#html5-qrcode-button-camera-stop {
-  background: #dc2626 !important;
-  border: 1px solid #b91c1c !important;
-  box-shadow: none !important;
-}
-
-#html5-qrcode-button-camera-stop:hover {
-  background: #b91c1c !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* Info link & Torch toggle */
-#qr-reader a {
-  color: #64748b !important;
-  text-decoration: none !important;
-  font-size: 11.5px !important;
-  opacity: 0.7;
-  transition: opacity 0.2s ease, color 0.2s ease;
-}
-
-#qr-reader a:hover {
-  opacity: 1;
-  color: #94a3b8 !important;
-}
-
-/* ==========================================================================
-   Result step in QRScanner
-   ========================================================================== */
-
-.qr-result-container {
+.native-scanner-card {
+  background-color: #141a29;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 16px 0;
   gap: 14px;
 }
 
-.qr-result-badge {
-  display: inline-flex;
+/* Header */
+.native-scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.native-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.native-scanner-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.native-scanner-subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.native-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.native-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* Viewport Area */
+.native-viewport-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 270px;
+  max-height: 270px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Video inside viewport */
+.native-qr-video-box {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+}
+
+.native-qr-video-box video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 16px !important;
+}
+
+/* Reticle Target Overlay */
+.native-reticle-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.reticle-box {
+  position: relative;
+  width: 190px;
+  height: 190px;
+}
+
+/* 4 Clean Corner Brackets */
+.reticle-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: #ffffff;
+  border-style: solid;
+}
+
+.corner-tl {
+  top: 0;
+  left: 0;
+  border-width: 3.5px 0 0 3.5px;
+  border-top-left-radius: 6px;
+}
+
+.corner-tr {
+  top: 0;
+  right: 0;
+  border-width: 3.5px 3.5px 0 0;
+  border-top-right-radius: 6px;
+}
+
+.corner-bl {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 3.5px 3.5px;
+  border-bottom-left-radius: 6px;
+}
+
+.corner-br {
+  bottom: 0;
+  right: 0;
+  border-width: 0 3.5px 3.5px 0;
+  border-bottom-right-radius: 6px;
+}
+
+/* Animated Smooth Laser Beam */
+.scanning-laser-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #10b981 50%, transparent 100%);
+  border-radius: 1px;
+  animation: laserScan 2.4s ease-in-out infinite;
+}
+
+@keyframes laserScan {
+  0% {
+    top: 8px;
+    opacity: 0.3;
+  }
+  50% {
+    top: calc(100% - 10px);
+    opacity: 1;
+  }
+  100% {
+    top: 8px;
+    opacity: 0.3;
+  }
+}
+
+/* Loading and Error States in Viewport */
+.native-camera-loading {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.native-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.native-camera-error {
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
 }
 
-.qr-result-badge.success {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.qr-result-badge.error {
-  background: rgba(239, 68, 68, 0.15);
+.native-camera-error p {
+  margin: 0;
+  font-size: 12.5px;
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  line-height: 1.4;
 }
 
-.qr-actions-row {
+.native-retry-camera-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Compact Toolbar */
+.native-camera-tools {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  flex-wrap: wrap;
+}
+
+.native-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.native-tool-btn:hover {
+  background-color: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+.native-tool-btn.tool-active {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+/* Footer & Cancel Button */
+.native-scanner-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.native-cancel-btn {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.native-cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Status & Result Cards */
+.native-status-card {
+  text-align: center;
+  align-items: center;
+  padding: 32px 24px;
+}
+
+.native-status-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+.native-status-card h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.native-status-card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #94a3b8;
+}
+
+.native-result-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.result-success {
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.result-error {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.text-success {
+  color: #34d399 !important;
+}
+
+.text-error {
+  color: #f87171 !important;
+}
+
+.native-result-msg {
+  font-size: 13.5px;
+  color: #cbd5e1;
+  max-width: 300px;
+  line-height: 1.4;
+  margin: 4px 0 16px 0 !important;
+}
+
+.native-result-actions {
+  display: flex;
+  gap: 10px;
   width: 100%;
 }
 
-
-.qr-rescan-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 11px 22px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  outline: none;
-}
-
-.qr-rescan-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.qr-rescan-btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.qr-login-btn {
-  background: #2563eb;
+.native-primary-btn {
+  flex: 1;
+  background-color: #2563eb;
   color: #ffffff;
   border: none;
-  padding: 12px 28px;
-  border-radius: 10px;
-  font-size: 14.5px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.native-primary-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.native-secondary-btn {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  outline: none;
 }
 
-.qr-login-btn:hover {
-  background: #1d4ed8;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.qr-login-btn:active {
-  transform: translateY(0) scale(0.98);
+.native-secondary-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }

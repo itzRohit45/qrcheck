@@ -273,6 +273,12 @@
   gap: 10px;
 }
 
+.top-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .back-to-list-btn {
   display: inline-flex;
   align-items: center;
@@ -293,6 +299,35 @@
   background-color: rgba(255, 255, 255, 0.05);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  color: #60a5fa;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.2);
+  color: #ffffff;
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
 }
 
 .session-badge-row {
