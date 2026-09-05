@@ -30,24 +30,42 @@ body {
   overflow: hidden;
 }
 
-.nav-logo {
-  width: 48px;
-  height: 48px;
-  background-color: transparent;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
+.nav-brand-link {
+  text-decoration: none;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.nav-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.03);
-  /* Just enough to perfectly clip the white corners without cutting the blue ring */
+.nav-brand-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-brand-text {
+  font-family: "Poppins", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.nav-brand-link:hover .nav-brand-text {
+  transform: translateY(-1px);
+}
+
+.nav-brand-x {
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 55%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  margin-left: 1px;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5));
 }
 
 

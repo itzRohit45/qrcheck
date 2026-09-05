@@ -31,14 +31,10 @@ const Nav = () => {
     <div className={`nav-container ${isLoggedIn ? "nav-logged-in" : ""}`}>
       <nav className="nav-bar">
         <div className="nav-logo-container">
-          <a href="/">
-            <div className="nav-logo">
-              <img
-                src="/new_logo.png"
-                alt="ScanMe Logo"
-                className="nav-logo-img"
-              />
-            </div>
+          <a href="/" className="nav-brand-link">
+            <span className="nav-brand-text">
+              Attend<span className="nav-brand-x">X</span>
+            </span>
           </a>
         </div>
 
