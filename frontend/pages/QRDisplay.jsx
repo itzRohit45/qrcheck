@@ -213,7 +213,7 @@ export default function QRDisplay({ sessionId }) {
                 borderRadius: "50%",
                 background: "#10b981",
               }}></span>
-              Rotating Live
+              Active QR
             </span>
             <span style={{ fontWeight: 600, color: "#38bdf8" }}>
               Refreshes in {secondsLeft}s
@@ -237,7 +237,7 @@ export default function QRDisplay({ sessionId }) {
         </div>
       )}
 
-      {/* Projector Fullscreen Mode Button for Large Auditoriums */}
+      {/* Fullscreen Mode Button */}
       <button
         onClick={enterFullscreen}
         style={{
@@ -267,7 +267,7 @@ export default function QRDisplay({ sessionId }) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
         </svg>
-        Projector Fullscreen Mode
+        Fullscreen Mode
       </button>
 
       <p style={{
@@ -276,7 +276,7 @@ export default function QRDisplay({ sessionId }) {
         color: "#94a3b8",
         fontWeight: 500
       }}>
-        Students: Scan with your smartphone to mark attendance
+        Scan with your phone camera to mark attendance
       </p>
 
       {/* Fullscreen Projector Overlay for Classroom Displays / Last Benches */}
@@ -318,7 +318,7 @@ export default function QRDisplay({ sessionId }) {
                 }}
               ></span>
               <span style={{ color: "#f8fafc", fontSize: "15px", fontWeight: 600 }}>
-                Live Classroom Attendance Stream
+                Classroom Attendance Screen
               </span>
             </div>
 
@@ -345,7 +345,7 @@ export default function QRDisplay({ sessionId }) {
             </button>
           </div>
 
-          {/* Giant High-Occupancy QR Code Container */}
+          {/* Large QR Code Container */}
           <div
             style={{
               background: "#ffffff",
@@ -406,7 +406,7 @@ export default function QRDisplay({ sessionId }) {
                     borderRadius: "50%",
                     background: "#2563eb",
                   }}></span>
-                  High-Range Projector Mode
+                  Fullscreen View
                 </span>
                 <span style={{ fontWeight: 700, color: "#38bdf8", fontSize: "14px" }}>
                   Refreshes in {secondsLeft}s
@@ -435,7 +435,7 @@ export default function QRDisplay({ sessionId }) {
           )}
 
           <p style={{ margin: "2px 0 0 0", fontSize: "14px", color: "#94a3b8" }}>
-            Point your smartphone camera at the screen to mark your attendance
+            Scan this QR code with your phone to mark attendance
           </p>
         </div>
       )}

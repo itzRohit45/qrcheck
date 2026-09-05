@@ -73,7 +73,7 @@ const CourseDetails = () => {
         courseId: id,
         duration: Number(sessionDetails.duration),
       });
-      toast.success("Session created successfully!");
+      toast.success("Session started successfully!");
       setShowSessionModal(false);
       setSessionDetails({ courseId: "", duration: "" });
 
@@ -128,12 +128,12 @@ const CourseDetails = () => {
     }
   };
 
-  // Reset Student Device (Device Binding Reset)
+  // Reset Student Registered Phone
   const handleResetDevice = async (studentId, studentName = "") => {
     const label = studentName ? `for ${studentName}` : "";
     if (
       !window.confirm(
-        `Reset bound device ${label}? The student can bind a new phone on their next scan.`
+        `Reset registered phone ${label}? The student will be able to register a new phone on their next scan.`
       )
     ) {
       return;
@@ -141,7 +141,7 @@ const CourseDetails = () => {
 
     try {
       await clientServer.post("/users/reset-device", { studentId });
-      toast.success("Device reset successfully. Student can now use a new phone.");
+      toast.success("Phone reset. Student can now scan from a new device.");
       fetchCourseDetails(activeSession?._id);
     } catch (error) {
       console.error("Error resetting device:", error);
@@ -183,6 +183,26 @@ const CourseDetails = () => {
         (s.email && s.email.toLowerCase().includes(q))
     );
   }, [course, studentSearch]);
+
+  // Helper to determine if a student has registered device or marked attendance
+  const isStudentDeviceBound = (student) => {
+    if (student.deviceId) return true;
+    // Fallback: check if student has any recorded attendance in course sessions
+    if (course?.sessions) {
+      for (const sess of course.sessions) {
+        if (
+          sess.attendance?.some(
+            (a) =>
+              (a.studentId?._id === student._id || a.studentId === student._id) &&
+              a.scannedAt
+          )
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
 
   // Compute analytics for active session
   const sessionAnalytics = useMemo(() => {
@@ -324,7 +344,7 @@ const CourseDetails = () => {
             className={styles["create-session-btn"]}
           >
             <span className={styles["btn-icon"]}>+</span>
-            <span>Start New Session</span>
+            <span>Start Session</span>
           </button>
         </div>
       </aside>
@@ -359,7 +379,7 @@ const CourseDetails = () => {
         </header>
 
         <div className={styles["dashboard-body"]}>
-          {/* VIEW 1: ACTIVE SESSION ANALYTICS DASHBOARD */}
+          {/* VIEW 1: ACTIVE SESSION ATTENDANCE & ANALYTICS */}
           {activeSession ? (
             <div className={styles["session-view-container"]}>
               {/* Back to overview and Session Header */}
@@ -407,7 +427,7 @@ const CourseDetails = () => {
                         })}
                       </span>
                       <span className={styles["session-duration-tag"]}>
-                        {activeSession.duration} Minutes
+                        {activeSession.duration} Mins
                       </span>
                     </div>
                     <h2 className={styles["session-view-title"]}>
@@ -423,7 +443,7 @@ const CourseDetails = () => {
                     onClick={() =>
                       generateAttendancePDF(course, activeSession, true)
                     }
-                    title="Export list of students who were absent as PDF"
+                    title="Download list of absent students as PDF"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -448,7 +468,7 @@ const CourseDetails = () => {
                     onClick={() =>
                       generateAttendancePDF(course, activeSession, false)
                     }
-                    title="Export full attendance report as PDF"
+                    title="Download full attendance report as PDF"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -509,7 +529,7 @@ const CourseDetails = () => {
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
                       </svg>
-                      <span>Show QR Screen</span>
+                      <span>Show QR Code</span>
                     </button>
                   )}
                 </div>
@@ -518,12 +538,12 @@ const CourseDetails = () => {
               {/* KPI Analytics Cards */}
               <div className={styles["kpi-grid"]}>
                 <div className={styles["kpi-card"]}>
-                  <div className={styles["kpi-label"]}>Total Enrolled</div>
+                  <div className={styles["kpi-label"]}>Total Students</div>
                   <div className={styles["kpi-value"]}>
                     {sessionAnalytics.total}
                   </div>
                   <div className={styles["kpi-subtext"]}>
-                    Registered students
+                    Registered in class
                   </div>
                 </div>
 
@@ -533,7 +553,7 @@ const CourseDetails = () => {
                     {sessionAnalytics.present}
                   </div>
                   <div className={styles["kpi-subtext"]}>
-                    {sessionAnalytics.rate}% attendance rate
+                    {sessionAnalytics.rate}% attended
                   </div>
                 </div>
 
@@ -546,7 +566,7 @@ const CourseDetails = () => {
                     {sessionAnalytics.total > 0
                       ? (100 - sessionAnalytics.rate).toFixed(0)
                       : 0}
-                    % absentee rate
+                    % absent
                   </div>
                 </div>
 
@@ -574,14 +594,12 @@ const CourseDetails = () => {
                     {/* SVG Donut Chart */}
                     <div className={styles["donut-container"]}>
                       <svg viewBox="0 0 100 100" className={styles["donut-svg"]}>
-                        {/* Background track circle */}
                         <circle
                           cx="50"
                           cy="50"
                           r="40"
                           className={styles["donut-track"]}
                         />
-                        {/* Present arc (Green) */}
                         <circle
                           cx="50"
                           cy="50"
@@ -592,7 +610,6 @@ const CourseDetails = () => {
                           } 251.3`}
                           strokeDashoffset="0"
                         />
-                        {/* Absent arc (Red) */}
                         <circle
                           cx="50"
                           cy="50"
@@ -651,10 +668,10 @@ const CourseDetails = () => {
                         ></div>
                         <div className={styles["legend-text"]}>
                           <span className={styles["legend-label"]}>
-                            Total Enrolled
+                            Total Students
                           </span>
                           <span className={styles["legend-count"]}>
-                            {sessionAnalytics.total} students
+                            {sessionAnalytics.total} enrolled
                           </span>
                         </div>
                       </div>
@@ -684,13 +701,13 @@ const CourseDetails = () => {
 
                   <div className={styles["session-info-list"]}>
                     <div className={styles["info-row"]}>
-                      <span className={styles["info-label"]}>Created Date</span>
+                      <span className={styles["info-label"]}>Created</span>
                       <span className={styles["info-val"]}>
                         {new Date(activeSession.date).toLocaleString()}
                       </span>
                     </div>
                     <div className={styles["info-row"]}>
-                      <span className={styles["info-label"]}>Expires At</span>
+                      <span className={styles["info-label"]}>Expires</span>
                       <span className={styles["info-val"]}>
                         {new Date(activeSession.expiresAt).toLocaleString()}
                       </span>
@@ -706,7 +723,7 @@ const CourseDetails = () => {
                       <span className={styles["info-val"]}>
                         {new Date(activeSession.expiresAt) > new Date() ? (
                           <span className={styles["status-active-pill"]}>
-                            Active / Accepting Scans
+                            Active / In Progress
                           </span>
                         ) : (
                           <span className={styles["status-closed-pill"]}>
@@ -719,11 +736,11 @@ const CourseDetails = () => {
                 </div>
               </div>
 
-              {/* Attendance Records Table with Search and Filters (Inline, No Modal!) */}
+              {/* Attendance Records Section */}
               <div className={styles["records-section"]}>
                 <div className={styles["records-header"]}>
                   <div className={styles["records-title-group"]}>
-                    <h3>Student Attendance Records</h3>
+                    <h3>Attendance List</h3>
                     <span className={styles["records-count-badge"]}>
                       {filteredAttendance.length} records
                     </span>
@@ -797,159 +814,279 @@ const CourseDetails = () => {
                 </div>
 
                 {filteredAttendance.length > 0 ? (
-                  <div className={styles["table-container"]}>
-                    <table className={styles["data-table"]}>
-                      <thead>
-                        <tr>
-                          <th>Student</th>
-                          <th>Roll Number</th>
-                          <th>Branch</th>
-                          <th>Status</th>
-                          <th>Scanned At</th>
-                          <th style={{ textAlign: "center" }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAttendance.map((rec) => {
-                          const student = rec.studentId || {};
-                          const studentId = student._id || rec.studentId;
-                          const branch =
-                            student.branch ||
-                            course.students.find((s) => s._id === studentId)
-                              ?.branch ||
-                            "N/A";
-                          const isPresent = rec.status === "Present";
+                  <>
+                    {/* Desktop View Table */}
+                    <div className={styles["desktop-table-container"]}>
+                      <table className={styles["data-table"]}>
+                        <thead>
+                          <tr>
+                            <th>Student</th>
+                            <th>Roll Number</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th>Scanned At</th>
+                            <th style={{ textAlign: "center" }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAttendance.map((rec) => {
+                            const student = rec.studentId || {};
+                            const studentId = student._id || rec.studentId;
+                            const branch =
+                              student.branch ||
+                              course.students?.find((s) => s._id === studentId)
+                                ?.branch ||
+                              "N/A";
+                            const isPresent = rec.status === "Present";
 
-                          return (
-                            <tr key={studentId}>
-                              <td>
-                                <div className={styles["student-cell"]}>
-                                  <div className={styles["avatar-circle"]}>
-                                    {(student.name || "S")
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .slice(0, 2)
-                                      .join("")
-                                      .toUpperCase()}
+                            return (
+                              <tr key={studentId}>
+                                <td>
+                                  <div className={styles["student-cell"]}>
+                                    <div className={styles["avatar-circle"]}>
+                                      {(student.name || "S")
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase()}
+                                    </div>
+                                    <div className={styles["student-text-group"]}>
+                                      <span className={styles["student-name"]}>
+                                        {student.name || "Student"}
+                                      </span>
+                                      <span className={styles["student-email"]}>
+                                        {student.email || ""}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className={styles["student-text-group"]}>
-                                    <span className={styles["student-name"]}>
-                                      {student.name || "Unknown Student"}
-                                    </span>
-                                    <span className={styles["student-email"]}>
-                                      {student.email || ""}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <span className={styles["roll-badge"]}>
-                                  {student.rollNo || "N/A"}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={styles["branch-badge"]}>
-                                  {branch}
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  className={
-                                    isPresent
-                                      ? styles["status-present"]
-                                      : styles["status-absent"]
-                                  }
-                                >
-                                  {rec.status}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={styles["scan-time-text"]}>
-                                  {rec.scannedAt
-                                    ? new Date(rec.scannedAt).toLocaleTimeString(
-                                        [],
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          second: "2-digit",
-                                        }
-                                      )
-                                    : "Not scanned"}
-                                </span>
-                              </td>
-                              <td>
-                                <div className={styles["inline-action-group"]}>
-                                  <button
+                                </td>
+                                <td>
+                                  <span className={styles["roll-badge"]}>
+                                    {student.rollNo || "N/A"}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={styles["branch-badge"]}>
+                                    {branch}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span
                                     className={
                                       isPresent
-                                        ? styles["btn-mark-absent"]
-                                        : styles["btn-mark-present"]
+                                        ? styles["status-present"]
+                                        : styles["status-absent"]
                                     }
-                                    onClick={() =>
-                                      handleQuickStatusToggle(
-                                        studentId,
-                                        rec.status
-                                      )
-                                    }
-                                    title={`Toggle status to ${
-                                      isPresent ? "Absent" : "Present"
-                                    }`}
                                   >
-                                    {isPresent ? "Mark Absent" : "Mark Present"}
-                                  </button>
-
-                                  <button
-                                    className={styles["btn-reset-device"]}
-                                    onClick={() =>
-                                      handleResetDevice(studentId, student.name)
-                                    }
-                                    title="Reset device binding for student"
-                                  >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="13"
-                                      height="13"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
+                                    {rec.status}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={styles["scan-time-text"]}>
+                                    {rec.scannedAt
+                                      ? new Date(rec.scannedAt).toLocaleTimeString(
+                                          [],
+                                          {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            second: "2-digit",
+                                          }
+                                        )
+                                      : "Not scanned"}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className={styles["inline-action-group"]}>
+                                    <button
+                                      className={
+                                        isPresent
+                                          ? styles["btn-mark-absent"]
+                                          : styles["btn-mark-present"]
+                                      }
+                                      onClick={() =>
+                                        handleQuickStatusToggle(
+                                          studentId,
+                                          rec.status
+                                        )
+                                      }
+                                      title={`Mark as ${
+                                        isPresent ? "Absent" : "Present"
+                                      }`}
                                     >
-                                      <rect
-                                        x="5"
-                                        y="2"
-                                        width="14"
-                                        height="20"
-                                        rx="2"
-                                        ry="2"
-                                      ></rect>
-                                      <line
-                                        x1="12"
-                                        y1="18"
-                                        x2="12.01"
-                                        y2="18"
-                                      ></line>
-                                    </svg>
-                                    <span>Reset Device</span>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                      {isPresent ? "Mark Absent" : "Mark Present"}
+                                    </button>
+
+                                    <button
+                                      className={styles["btn-reset-device"]}
+                                      onClick={() =>
+                                        handleResetDevice(studentId, student.name)
+                                      }
+                                      title="Reset registered phone for student"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="13"
+                                        height="13"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <rect
+                                          x="5"
+                                          y="2"
+                                          width="14"
+                                          height="20"
+                                          rx="2"
+                                          ry="2"
+                                        ></rect>
+                                        <line
+                                          x1="12"
+                                          y1="18"
+                                          x2="12.01"
+                                          y2="18"
+                                        ></line>
+                                      </svg>
+                                      <span>Reset Phone</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View List */}
+                    <div className={styles["mobile-cards-list"]}>
+                      {filteredAttendance.map((rec) => {
+                        const student = rec.studentId || {};
+                        const studentId = student._id || rec.studentId;
+                        const branch =
+                          student.branch ||
+                          course.students?.find((s) => s._id === studentId)
+                            ?.branch ||
+                          "N/A";
+                        const isPresent = rec.status === "Present";
+
+                        return (
+                          <div
+                            key={studentId}
+                            className={styles["mobile-item-card"]}
+                          >
+                            <div className={styles["mobile-card-top"]}>
+                              <div className={styles["avatar-circle"]}>
+                                {(student.name || "S")
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                                  .toUpperCase()}
+                              </div>
+                              <div className={styles["student-text-group"]}>
+                                <span className={styles["student-name"]}>
+                                  {student.name || "Student"}
+                                </span>
+                                <span className={styles["student-email"]}>
+                                  {student.email || ""}
+                                </span>
+                              </div>
+                              <span
+                                className={
+                                  isPresent
+                                    ? styles["status-present"]
+                                    : styles["status-absent"]
+                                }
+                              >
+                                {rec.status}
+                              </span>
+                            </div>
+
+                            <div className={styles["mobile-card-meta-row"]}>
+                              <span className={styles["roll-badge"]}>
+                                {student.rollNo || "N/A"}
+                              </span>
+                              <span className={styles["branch-badge"]}>
+                                {branch}
+                              </span>
+                              <span className={styles["scan-time-text"]}>
+                                {rec.scannedAt
+                                  ? new Date(rec.scannedAt).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )
+                                  : "Not scanned"}
+                              </span>
+                            </div>
+
+                            <div className={styles["mobile-card-action-row"]}>
+                              <button
+                                className={
+                                  isPresent
+                                    ? styles["btn-mark-absent-mobile"]
+                                    : styles["btn-mark-present-mobile"]
+                                }
+                                onClick={() =>
+                                  handleQuickStatusToggle(studentId, rec.status)
+                                }
+                              >
+                                {isPresent ? "Mark Absent" : "Mark Present"}
+                              </button>
+
+                              <button
+                                className={styles["btn-reset-device-mobile"]}
+                                onClick={() =>
+                                  handleResetDevice(studentId, student.name)
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="13"
+                                  height="13"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <rect
+                                    x="5"
+                                    y="2"
+                                    width="14"
+                                    height="20"
+                                    rx="2"
+                                    ry="2"
+                                  ></rect>
+                                  <line
+                                    x1="12"
+                                    y1="18"
+                                    x2="12.01"
+                                    y2="18"
+                                  ></line>
+                                </svg>
+                                <span>Reset Phone</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 ) : (
                   <div className={styles["empty-state-mini"]}>
-                    <p>No matching student records found for this filter.</p>
+                    <p>No student records match this filter.</p>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            /* VIEW 2: COURSE OVERVIEW (Enrolled Students & Session History) */
+            /* VIEW 2: COURSE OVERVIEW (Enrolled Students & Attendance Sessions) */
             <>
-              {/* Enrolled Students Modernized Card */}
+              {/* Enrolled Students Section */}
               <div className={styles["section-card"]}>
                 <div className={styles["card-header-row"]}>
                   <div className={styles["header-title-block"]}>
@@ -994,114 +1131,211 @@ const CourseDetails = () => {
                 </div>
 
                 {filteredStudents.length > 0 ? (
-                  <div className={styles["table-container"]}>
-                    <table className={styles["data-table"]}>
-                      <thead>
-                        <tr>
-                          <th>Student</th>
-                          <th>Roll Number</th>
-                          <th>Branch</th>
-                          <th>Device Binding</th>
-                          <th style={{ textAlign: "center" }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredStudents.map((student) => (
-                          <tr key={student._id}>
-                            <td>
-                              <div className={styles["student-cell"]}>
-                                <div className={styles["avatar-circle"]}>
-                                  {(student.name || "S")
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .slice(0, 2)
-                                    .join("")
-                                    .toUpperCase()}
-                                </div>
-                                <div className={styles["student-text-group"]}>
-                                  <span className={styles["student-name"]}>
-                                    {student.name}
+                  <>
+                    {/* Desktop View Table */}
+                    <div className={styles["desktop-table-container"]}>
+                      <table className={styles["data-table"]}>
+                        <thead>
+                          <tr>
+                            <th>Student</th>
+                            <th>Roll Number</th>
+                            <th>Branch</th>
+                            <th>Device Status</th>
+                            <th style={{ textAlign: "center" }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredStudents.map((student) => {
+                            const isBound = isStudentDeviceBound(student);
+                            return (
+                              <tr key={student._id}>
+                                <td>
+                                  <div className={styles["student-cell"]}>
+                                    <div className={styles["avatar-circle"]}>
+                                      {(student.name || "S")
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase()}
+                                    </div>
+                                    <div className={styles["student-text-group"]}>
+                                      <span className={styles["student-name"]}>
+                                        {student.name}
+                                      </span>
+                                      <span className={styles["student-email"]}>
+                                        {student.email}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={styles["roll-badge"]}>
+                                    {student.rollNo}
                                   </span>
-                                  <span className={styles["student-email"]}>
-                                    {student.email}
+                                </td>
+                                <td>
+                                  <span className={styles["branch-badge"]}>
+                                    {student.branch || "General"}
                                   </span>
-                                </div>
+                                </td>
+                                <td>
+                                  {isBound ? (
+                                    <span className={styles["device-bound-pill"]}>
+                                      <span
+                                        className={styles["device-dot-bound"]}
+                                      ></span>
+                                      Device Linked
+                                    </span>
+                                  ) : (
+                                    <span className={styles["device-unbound-pill"]}>
+                                      Not Linked
+                                    </span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className={styles["inline-action-group"]}>
+                                    <button
+                                      className={styles["btn-reset-device"]}
+                                      onClick={() =>
+                                        handleResetDevice(
+                                          student._id,
+                                          student.name
+                                        )
+                                      }
+                                      title="Reset registered phone for student"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="13"
+                                        height="13"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <rect
+                                          x="5"
+                                          y="2"
+                                          width="14"
+                                          height="20"
+                                          rx="2"
+                                          ry="2"
+                                        ></rect>
+                                        <line
+                                          x1="12"
+                                          y1="18"
+                                          x2="12.01"
+                                          y2="18"
+                                        ></line>
+                                      </svg>
+                                      <span>Reset Device</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View List */}
+                    <div className={styles["mobile-cards-list"]}>
+                      {filteredStudents.map((student) => {
+                        const isBound = isStudentDeviceBound(student);
+                        return (
+                          <div
+                            key={student._id}
+                            className={styles["mobile-item-card"]}
+                          >
+                            <div className={styles["mobile-card-top"]}>
+                              <div className={styles["avatar-circle"]}>
+                                {(student.name || "S")
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                                  .toUpperCase()}
                               </div>
-                            </td>
-                            <td>
+                              <div className={styles["student-text-group"]}>
+                                <span className={styles["student-name"]}>
+                                  {student.name}
+                                </span>
+                                <span className={styles["student-email"]}>
+                                  {student.email}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className={styles["mobile-card-meta-row"]}>
                               <span className={styles["roll-badge"]}>
                                 {student.rollNo}
                               </span>
-                            </td>
-                            <td>
                               <span className={styles["branch-badge"]}>
                                 {student.branch || "General"}
                               </span>
-                            </td>
-                            <td>
-                              {student.deviceId ? (
+                              {isBound ? (
                                 <span className={styles["device-bound-pill"]}>
                                   <span
                                     className={styles["device-dot-bound"]}
                                   ></span>
-                                  Device Bound
+                                  Device Linked
                                 </span>
                               ) : (
                                 <span className={styles["device-unbound-pill"]}>
-                                  Not Bound
+                                  Not Linked
                                 </span>
                               )}
-                            </td>
-                            <td>
-                              <div className={styles["inline-action-group"]}>
-                                <button
-                                  className={styles["btn-reset-device"]}
-                                  onClick={() =>
-                                    handleResetDevice(
-                                      student._id,
-                                      student.name
-                                    )
-                                  }
-                                  title="Clear registered device binding so student can login on a new phone"
+                            </div>
+
+                            <div className={styles["mobile-card-action-row"]}>
+                              <button
+                                className={styles["btn-reset-device-mobile"]}
+                                onClick={() =>
+                                  handleResetDevice(
+                                    student._id,
+                                    student.name
+                                  )
+                                }
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
                                 >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="13"
-                                    height="13"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                  >
-                                    <rect
-                                      x="5"
-                                      y="2"
-                                      width="14"
-                                      height="20"
-                                      rx="2"
-                                      ry="2"
-                                    ></rect>
-                                    <line
-                                      x1="12"
-                                      y1="18"
-                                      x2="12.01"
-                                      y2="18"
-                                    ></line>
-                                  </svg>
-                                  <span>Reset Device</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                  <rect
+                                    x="5"
+                                    y="2"
+                                    width="14"
+                                    height="20"
+                                    rx="2"
+                                    ry="2"
+                                  ></rect>
+                                  <line
+                                    x1="12"
+                                    y1="18"
+                                    x2="12.01"
+                                    y2="18"
+                                  ></line>
+                                </svg>
+                                <span>Reset Registered Phone</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 ) : (
                   <div className={styles["empty-state-mini"]}>
                     <p>
                       {studentSearch
-                        ? "No students match your search criteria."
+                        ? "No students match your search."
                         : "No students enrolled in this course yet."}
                     </p>
                   </div>
@@ -1135,119 +1369,217 @@ const CourseDetails = () => {
                 </div>
 
                 {course.sessions && course.sessions.length > 0 ? (
-                  <div className={styles["table-container"]}>
-                    <table className={styles["data-table"]}>
-                      <thead>
-                        <tr>
-                          <th>Date & Time</th>
-                          <th>Duration</th>
-                          <th>Status</th>
-                          <th>Attendance Summary</th>
-                          <th style={{ textAlign: "center" }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {course.sessions.map((session) => {
-                          const isLive =
-                            new Date(session.expiresAt) > new Date();
-                          const presentCount =
-                            session.attendance?.filter(
-                              (a) => a.status === "Present"
-                            ).length || 0;
-                          const totalCount =
-                            session.attendance?.length ||
-                            course.students?.length ||
-                            0;
-                          const rate =
-                            totalCount > 0
-                              ? Math.round((presentCount / totalCount) * 100)
-                              : 0;
+                  <>
+                    {/* Desktop View Table */}
+                    <div className={styles["desktop-table-container"]}>
+                      <table className={styles["data-table"]}>
+                        <thead>
+                          <tr>
+                            <th>Date & Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Attendance Summary</th>
+                            <th style={{ textAlign: "center" }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {course.sessions.map((session) => {
+                            const isLive =
+                              new Date(session.expiresAt) > new Date();
+                            const presentCount =
+                              session.attendance?.filter(
+                                (a) => a.status === "Present"
+                              ).length || 0;
+                            const totalCount =
+                              session.attendance?.length ||
+                              course.students?.length ||
+                              0;
+                            const rate =
+                              totalCount > 0
+                                ? Math.round((presentCount / totalCount) * 100)
+                                : 0;
 
-                          return (
-                            <tr key={session._id}>
-                              <td>
-                                <div className={styles["session-datetime-cell"]}>
-                                  <span className={styles["session-date-text"]}>
-                                    {new Date(session.date).toLocaleDateString(
-                                      [],
-                                      {
-                                        weekday: "short",
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                      }
-                                    )}
-                                  </span>
-                                  <span className={styles["session-time-text"]}>
-                                    {new Date(session.date).toLocaleTimeString(
-                                      [],
-                                      {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      }
-                                    )}
-                                  </span>
-                                </div>
-                              </td>
-                              <td>{session.duration} mins</td>
-                              <td>
-                                <span
-                                  className={
-                                    isLive
-                                      ? styles["live-badge"]
-                                      : styles["completed-badge"]
-                                  }
-                                >
-                                  {isLive ? "Live" : "Completed"}
-                                </span>
-                              </td>
-                              <td>
-                                <div className={styles["summary-cell"]}>
-                                  <span className={styles["summary-counts"]}>
-                                    <strong>{presentCount}</strong> /{" "}
-                                    {totalCount} Present ({rate}%)
-                                  </span>
-                                  <div className={styles["summary-bar"]}>
-                                    <div
-                                      className={styles["summary-bar-fill"]}
-                                      style={{ width: `${rate}%` }}
-                                    ></div>
+                            return (
+                              <tr key={session._id}>
+                                <td>
+                                  <div className={styles["session-datetime-cell"]}>
+                                    <span className={styles["session-date-text"]}>
+                                      {new Date(session.date).toLocaleDateString(
+                                        [],
+                                        {
+                                          weekday: "short",
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        }
+                                      )}
+                                    </span>
+                                    <span className={styles["session-time-text"]}>
+                                      {new Date(session.date).toLocaleTimeString(
+                                        [],
+                                        {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        }
+                                      )}
+                                    </span>
                                   </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className={styles["inline-action-group"]}>
-                                  <button
-                                    className={styles["action-btn-primary"]}
-                                    onClick={() => setActiveSession(session)}
-                                    title="View session analytics, attendance list, and export reports"
+                                </td>
+                                <td>{session.duration} mins</td>
+                                <td>
+                                  <span
+                                    className={
+                                      isLive
+                                        ? styles["live-badge"]
+                                        : styles["completed-badge"]
+                                    }
                                   >
-                                    View Analytics
-                                  </button>
-
-                                  {isLive && (
+                                    {isLive ? "Live" : "Completed"}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className={styles["summary-cell"]}>
+                                    <span className={styles["summary-counts"]}>
+                                      <strong>{presentCount}</strong> /{" "}
+                                      {totalCount} Present ({rate}%)
+                                    </span>
+                                    <div className={styles["summary-bar"]}>
+                                      <div
+                                        className={styles["summary-bar-fill"]}
+                                        style={{ width: `${rate}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className={styles["inline-action-group"]}>
                                     <button
-                                      className={styles["action-btn-emerald"]}
-                                      onClick={() => {
-                                        setSessionIdForQR(session._id);
-                                        setShowQR(true);
-                                      }}
-                                      title="Display QR code on screen"
+                                      className={styles["action-btn-primary"]}
+                                      onClick={() => setActiveSession(session)}
+                                      title="View attendance details & analytics"
                                     >
-                                      Display QR
+                                      View Analytics
                                     </button>
+
+                                    {isLive && (
+                                      <button
+                                        className={styles["action-btn-emerald"]}
+                                        onClick={() => {
+                                          setSessionIdForQR(session._id);
+                                          setShowQR(true);
+                                        }}
+                                        title="Display QR code on screen"
+                                      >
+                                        Show QR
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View List */}
+                    <div className={styles["mobile-cards-list"]}>
+                      {course.sessions.map((session) => {
+                        const isLive =
+                          new Date(session.expiresAt) > new Date();
+                        const presentCount =
+                          session.attendance?.filter(
+                            (a) => a.status === "Present"
+                          ).length || 0;
+                        const totalCount =
+                          session.attendance?.length ||
+                          course.students?.length ||
+                          0;
+                        const rate =
+                          totalCount > 0
+                            ? Math.round((presentCount / totalCount) * 100)
+                            : 0;
+
+                        return (
+                          <div
+                            key={session._id}
+                            className={styles["mobile-item-card"]}
+                          >
+                            <div className={styles["mobile-session-header"]}>
+                              <div>
+                                <div className={styles["session-date-text"]}>
+                                  {new Date(session.date).toLocaleDateString(
+                                    [],
+                                    {
+                                      weekday: "short",
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    }
                                   )}
                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                <div className={styles["session-time-text"]}>
+                                  {new Date(session.date).toLocaleTimeString(
+                                    [],
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}{" "}
+                                  • {session.duration} mins
+                                </div>
+                              </div>
+                              <span
+                                className={
+                                  isLive
+                                    ? styles["live-badge"]
+                                    : styles["completed-badge"]
+                                }
+                              >
+                                {isLive ? "Live" : "Completed"}
+                              </span>
+                            </div>
+
+                            <div className={styles["mobile-session-summary"]}>
+                              <div className={styles["mobile-summary-text"]}>
+                                <strong>{presentCount}</strong> of {totalCount}{" "}
+                                Present ({rate}%)
+                              </div>
+                              <div className={styles["summary-bar-mobile"]}>
+                                <div
+                                  className={styles["summary-bar-fill"]}
+                                  style={{ width: `${rate}%` }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            <div className={styles["mobile-session-actions"]}>
+                              <button
+                                className={styles["action-btn-primary-mobile"]}
+                                onClick={() => setActiveSession(session)}
+                              >
+                                View Analytics & Attendance
+                              </button>
+                              {isLive && (
+                                <button
+                                  className={styles["action-btn-emerald-mobile"]}
+                                  onClick={() => {
+                                    setSessionIdForQR(session._id);
+                                    setShowQR(true);
+                                  }}
+                                >
+                                  Show QR
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 ) : (
                   <div className={styles["empty-state-mini"]}>
-                    <p>No attendance sessions held for this course yet.</p>
+                    <p>No attendance sessions created yet.</p>
                   </div>
                 )}
               </div>
@@ -1262,7 +1594,7 @@ const CourseDetails = () => {
           <div className={styles["modal-content"]}>
             <h2>Start Attendance Session</h2>
             <p>
-              Initialize a rotating dynamic QR attendance session for{" "}
+              Start an attendance session for{" "}
               <strong>{course.courseName}</strong>.
             </p>
 
@@ -1298,7 +1630,7 @@ const CourseDetails = () => {
                 onClick={handleCreateSession}
                 disabled={isCreatingSession}
               >
-                {isCreatingSession ? "Creating..." : "Start & Open QR"}
+                {isCreatingSession ? "Starting..." : "Start & Open QR"}
               </button>
             </div>
           </div>
@@ -1311,8 +1643,8 @@ const CourseDetails = () => {
           <div className={styles["qr-modal-card"]}>
             <div className={styles["qr-modal-header"]}>
               <div>
-                <h3>Dynamic Attendance QR</h3>
-                <p>{course.courseName} - Rotating Anti-Proxy QR Code</p>
+                <h3>Attendance QR Code</h3>
+                <p>{course.courseName} • Scan to mark attendance</p>
               </div>
               <button
                 className={styles["close-qr-icon-btn"]}
@@ -1331,7 +1663,7 @@ const CourseDetails = () => {
                 className={styles["join-btn"]}
                 onClick={() => setShowQR(false)}
               >
-                Done Displaying
+                Close QR
               </button>
             </div>
           </div>

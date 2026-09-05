@@ -138,7 +138,7 @@ export const getCourseDetails = async (req, res) => {
     // Find course and populate teacher, students, and sessions
     const course = await Course.findById(id)
       .populate("teacherId", "name email") // Get teacher's name & email
-      .populate("students", "name email rollNo dept branch") // Get student details
+      .populate("students", "name email rollNo dept branch deviceId") // Get student details
       .populate({
         path: "sessions",
         select: "date radius duration expiresAt attendance",

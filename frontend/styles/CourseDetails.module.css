@@ -246,7 +246,7 @@
 }
 
 /* ==========================================================================
-   VIEW 1: ACTIVE SESSION ANALYTICS & ATTENDANCE VIEW (NO MODAL)
+   VIEW 1: ACTIVE SESSION ATTENDANCE & ANALYTICS VIEW
    ========================================================================== */
 
 .session-view-container {
@@ -856,12 +856,17 @@
   background-color: #047857;
 }
 
-/* Table Container & Base Data Table */
-.table-container {
+/* ==========================================================================
+   DESKTOP TABLE VS MOBILE CARDS LIST
+   ========================================================================== */
+
+/* Desktop Table Container */
+.desktop-table-container {
   background-color: #0f1422;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
   overflow-x: auto;
+  display: block;
 }
 
 .data-table {
@@ -1009,7 +1014,7 @@
   border-radius: 6px;
 }
 
-/* Inline Action Buttons (Clean, Not Stacked or Clunky) */
+/* Inline Action Buttons (Desktop) */
 .inline-action-group {
   display: flex;
   align-items: center;
@@ -1084,11 +1089,12 @@
 .session-date-text {
   font-weight: 600;
   color: #ffffff;
+  font-size: 13.5px;
 }
 
 .session-time-text {
-  font-size: 11.5px;
-  color: #64748b;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .summary-cell {
@@ -1157,7 +1163,172 @@
 }
 
 /* ==========================================================================
-   MODAL DIALOGS (SIMPLE CLEAN CREATE SESSION)
+   MOBILE RESPONSIVE CARDS (ZERO CLIPPING ON MOBILE)
+   ========================================================================== */
+
+.mobile-cards-list {
+  display: none; /* Hidden on desktop by default */
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-item-card {
+  background-color: #121828;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-card-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mobile-card-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.btn-reset-device-mobile {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-device-mobile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.btn-mark-absent-mobile {
+  flex: 1;
+  background-color: rgba(225, 29, 72, 0.14);
+  color: #fb7185;
+  border: 1px solid rgba(225, 29, 72, 0.28);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-mark-present-mobile {
+  flex: 1;
+  background-color: rgba(5, 150, 105, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Mobile Session Card Specifics */
+.mobile-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.mobile-session-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.mobile-summary-text {
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.mobile-summary-text strong {
+  color: #10b981;
+}
+
+.summary-bar-mobile {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.mobile-session-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.action-btn-primary-mobile {
+  flex: 1;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.action-btn-primary-mobile:hover {
+  background-color: #1d4ed8;
+}
+
+.action-btn-emerald-mobile {
+  background-color: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.action-btn-emerald-mobile:hover {
+  background-color: #047857;
+}
+
+/* ==========================================================================
+   MODAL DIALOGS (CLEAN CREATE SESSION & QR)
    ========================================================================== */
 
 .modal {
@@ -1461,7 +1632,7 @@
   }
 
   .dashboard-body {
-    padding: 16px;
+    padding: 16px 14px;
   }
 
   .session-view-header {
@@ -1471,15 +1642,16 @@
 
   .session-action-toolbar {
     width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .session-action-toolbar button {
-    flex: 1;
+    flex: 1 1 calc(50% - 8px);
     justify-content: center;
-  }
-
-  .kpi-grid {
-    grid-template-columns: 1fr;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 
   .graph-content {
@@ -1495,11 +1667,13 @@
   .card-header-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .records-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .filter-tab-group {
@@ -1514,5 +1688,43 @@
   .search-box {
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .start-session-header-btn {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+  }
+
+  /* On mobile: Hide desktop table and display card list */
+  .desktop-table-container {
+    display: none;
+  }
+
+  .mobile-cards-list {
+    display: flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 14px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  .session-action-toolbar button {
+    flex: 1 1 100%;
   }
 }
